@@ -1,0 +1,46 @@
+// Códigos que devuelve ticket-api, más dos propios del cliente (UNKNOWN y NETWORK_ERROR)
+export const ERROR_CODES = {
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  CARD_BRAND_REQUIRED: 'CARD_BRAND_REQUIRED',
+  CARD_BRAND_NOT_ALLOWED: 'CARD_BRAND_NOT_ALLOWED',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  RESERVATION_NOT_FOUND: 'RESERVATION_NOT_FOUND',
+  EVENT_NOT_FOUND: 'EVENT_NOT_FOUND',
+  SEAT_NOT_FOUND: 'SEAT_NOT_FOUND',
+  SEAT_NOT_AVAILABLE: 'SEAT_NOT_AVAILABLE',
+  EVENT_ALREADY_CANCELLED: 'EVENT_ALREADY_CANCELLED',
+  EVENT_ALREADY_ENDED: 'EVENT_ALREADY_ENDED',
+  EVENT_NOT_ACTIVE: 'EVENT_NOT_ACTIVE',
+  RESERVATION_EXPIRED: 'RESERVATION_EXPIRED',
+  EVENT_CANCELLED: 'EVENT_CANCELLED',
+  PAYMENT_REJECTED: 'PAYMENT_REJECTED',
+  CARD_PROBLEM: 'CARD_PROBLEM',
+  PAYMENT_GATEWAY_ERROR: 'PAYMENT_GATEWAY_ERROR',
+  PAYMENT_GATEWAY_TIMEOUT: 'PAYMENT_GATEWAY_TIMEOUT',
+  EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  UNKNOWN: 'UNKNOWN',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+export function isErrorCode(value: string): value is ErrorCode {
+  return Object.hasOwn(ERROR_CODES, value);
+}
+
+// Única clase del proyecto: extiende Error para conservar el stack
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code: string;
+
+  constructor(status: number, code: string, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}

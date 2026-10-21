@@ -1,0 +1,57 @@
+schema: spec-driven
+
+context: |
+  Proyecto: ticket-frontend, UI de la plataforma de tickets (eventos, seats,
+  reservas y compra). Consume la API de ticket-api
+  (/home/juandezmo/Documents/ticket_backend_api), cuyas reglas viven en
+  docs/business-rules.md y su contrato en docs/architecture.md (seccion 11) de ese repo.
+  Documentos de referencia de este repo: docs/architecture.md (estructura y capas)
+  y docs/api-integration.md (endpoints por pantalla, errores y huecos del backend).
+
+  Stack: React + TypeScript (estricto), Vite, pnpm, React Router, TanStack Query
+  (estado del servidor), Zustand (estado del cliente), react-hook-form + zod,
+  Tailwind CSS + shadcn/ui (Radix), lucide-react, sonner, date-fns, jwt-decode,
+  fetch nativo con un http-client propio. Calidad y pruebas: ESLint, Prettier,
+  Vitest, Testing Library, MSW para simular la API, Playwright para E2E y
+  dependency-cruiser para las reglas de capas.
+
+  Idioma: textos visibles de la UI, codigo, nombres y tests en ingles.
+  Documentos (OpenSpec, README, docs) y comentarios necesarios en espanol.
+
+  Estructura por features en src/features/<feature>/ con los archivos
+  api.ts, hooks.ts, store.ts (solo si la feature tiene estado de cliente),
+  schemas.ts, types.ts, components/, pages/ e index.ts. Compartido en src/shared
+  (api, session, ui, lib, config). Arranque en src/app (router, providers).
+  Flujo: page -> component -> hook -> api | store -> shared/api/http-client.
+  El component solo renderiza y nunca llama a api.ts ni a fetch. api.ts solo hace HTTP.
+  Una feature solo importa de otra por su index.ts; shared nunca importa de features.
+
+  Estado: los datos del servidor viven solo en TanStack Query (nunca se copian a
+  Zustand). Zustand guarda solo estado del cliente: sesion (token, rol), reserva
+  en curso y seleccion de seat. Los stores se leen con selectores.
+
+  SOLID pragmatico: un archivo una responsabilidad; tablas Record<Code, ...> en
+  lugar de if/else para errores y estados; props pequenas; sin clases ni
+  contenedor de inyeccion; sin abstracciones hasta que algo se repita dos veces.
+  Sin literales de negocio: constantes para estados, roles y codigos de error.
+  Pensado para que lo mantenga una persona junior: mismos nombres de archivo en
+  cada feature, prueba junto al archivo (X.test.tsx), componentes de maximo ~150 lineas.
+
+  Reglas clave de la API: JWT con sub y role (el login no devuelve el usuario);
+  registro publico crea USER; solo ADMIN crea eventos, cancela eventos y crea
+  usuarios; listado de eventos publico y paginado (pageSize 1 a 20); seats en
+  filas A-Z de 10; la reserva vence en expiresAt; la compra no se reintenta
+  automaticamente; errores con formato { code, message }; nunca se guardan
+  datos de tarjeta en el cliente.
+
+rules:
+  proposal:
+    - Incluir una seccion de fuera de alcance
+  specs:
+    - Describir comportamiento observable por el usuario, sin nombres de componentes ni librerias
+    - Los textos visibles de la UI se escriben en ingles
+  design:
+    - Respetar la estructura por features y las reglas de dependencia del contexto
+  tasks:
+    - Cada tarea indica como se verifica
+    - Respetar el idioma del contexto (codigo y UI en ingles, documentos en espanol)
