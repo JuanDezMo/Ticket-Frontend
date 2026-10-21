@@ -1,13 +1,12 @@
-import { useLocation } from 'react-router';
 import { EventFilters } from '../components/EventFilters';
 import { EventList } from '../components/EventList';
 import { Pagination } from '../components/Pagination';
-import { useEventFilters, useEvents } from '../hooks';
+import { useEventFilters, useEvents, useRememberListSearch } from '../hooks';
 
 const FIRST_PAGE = 1;
 
 export function EventsPage() {
-  const location = useLocation();
+  useRememberListSearch();
   const { filters, page, setFilter, setPage, clear } = useEventFilters();
   const events = useEvents(filters, page);
   const meta = events.data?.meta;
@@ -26,7 +25,6 @@ export function EventsPage() {
         isLoading={events.isLoading}
         error={events.error}
         page={page}
-        listSearch={location.search}
         onRetry={() => void events.refetch()}
         onFirstPage={() => setPage(FIRST_PAGE)}
       />

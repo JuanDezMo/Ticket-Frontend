@@ -66,7 +66,17 @@ El listado usa `placeholderData: keepPreviousData` para que la página no parpad
 - `env.currency` sale de `VITE_CURRENCY`, por defecto `USD`, que es la moneda acordada. La API envía `price` y `amount` como número en esa moneda, sin conversión.
 
 ### 9. "Back to events" conserva los filtros
-Cada tarjeta enlaza con `state: { search: location.search }`, y el detalle arma el enlace de vuelta con ese `search`. Si el detalle se abrió directo, vuelve a "/".
+Un segundo store de Zustand, `features/events/store.ts` (`useEventListStore`), guarda `lastSearch`: el query string del último listado que vio el usuario (`?type=CONCERT&page=2`).
+- `EventsPage` lo actualiza con `useEffect` cada vez que cambia `location.search`.
+- `EventDetailPage` arma el enlace `/${lastSearch}`.
+- Se persiste con `persist` en `sessionStorage`, así sobrevive a una recarga y a una pestaña nueva de la misma sesión, pero no se comparte entre pestañas ni dura más que la sesión del navegador.
+
+No se guardan datos del servidor; es estado del cliente, como manda la regla de estado.
+
+- *Alternativa descartada:* el state del historial (`location.state`). Se pierde al pasar por el login, al recargar y al abrir una pestaña nueva.
+- *Alternativa descartada:* el filtro en la URL del detalle (`?back=`). Sobrevive a todo, pero deja la URL del detalle larga y difícil de leer.
+- *Alternativa descartada:* reenviar el state a través del login. Obliga a tocar `shared/session` para un caso de una sola feature.
+- *Alternativa descartada:* `navigate(-1)`. Después del login vuelve al formulario de login.
 
 ### 10. Avisos con una función pura
 `getEventNotice(event, now)` devuelve `CANCELLED`, `STARTED` o `null`, y una tabla define el texto de cada uno. `now` llega como parámetro para que se pueda probar.

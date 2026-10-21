@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { useSeatSelectionStore } from '@/features/seats/store';
+import { useEventListStore } from '../store';
 import { daysFromNow, makeEvent, makeSeats } from '@/test/fixtures/events';
 import { seatRequests, setEvents, setSeats } from '@/test/msw/event-handlers';
 import { apiPath, errorBody } from '@/test/msw/handlers';
@@ -56,6 +57,32 @@ describe('EventDetailPage', () => {
       const event = seedEvent({ startDate: daysFromNow(0, -1), endDate: daysFromNow(0, 2) });
       renderRoute(`/events/${event.id}`);
       expect(await screen.findByText('This event has already started')).toBeInTheDocument();
+    });
+
+    it('goes back to the last filters after a reload of the detail', async () => {
+      const event = seedEvent({ type: 'CONCERT' });
+      // El listado quedó guardado en sessionStorage antes de recargar
+      sessionStorage.setItem(
+        'ticket-event-list',
+        JSON.stringify({ state: { lastSearch: '?type=CONCERT' }, version: 0 }),
+      );
+      await useEventListStore.persist.rehydrate();
+      renderRoute(`/events/${event.id}`);
+
+      expect(await screen.findByRole('link', { name: 'Back to events' })).toHaveAttribute(
+        'href',
+        '/?type=CONCERT',
+      );
+    });
+
+    it('goes back to "/" when the list was not used in this tab', async () => {
+      const event = seedEvent();
+      renderRoute(`/events/${event.id}`);
+
+      expect(await screen.findByRole('link', { name: 'Back to events' })).toHaveAttribute(
+        'href',
+        '/',
+      );
     });
 
     it('goes back to the list keeping the filters', async () => {

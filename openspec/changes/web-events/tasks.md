@@ -90,6 +90,11 @@
 
 - [x] 8.1 En `src/app/routes.tsx`, la ruta índice usa `EventsPage` y se agrega `ROUTES.eventDetailPattern` con `EventDetailPage` (pública). Quitar `HomePage` de `src/app/pages.tsx` y actualizar las pruebas que esperaban el placeholder (`smoke.test.tsx`, `routes.test.tsx`). Verificar con `pnpm test`
 - [x] 8.2 Prueba de integración del flujo: un visitante abre `/`, filtra por "Concert", abre un evento, ve "Sign in to see available seats", inicia sesión desde el enlace, vuelve al evento y ve el mapa. Luego "Back to events" conserva el filtro. Verificar que pasa con `pnpm test`
+- [x] 8.3 Crear `src/features/events/store.ts` (`useEventListStore` con `lastSearch` y `setLastSearch`, `persist` en `sessionStorage`) según la decisión 9. `EventsPage` lo actualiza cuando cambia `location.search`, y `EventDetailPage` arma "Back to events" con él. Quitar el `state` de los enlaces de `EventCard`. Verificar con pruebas:
+  - volver después de iniciar sesión conserva el filtro (actualizar la prueba de flujo);
+  - volver después de recargar, con el store rehidratado desde `sessionStorage`, conserva el filtro;
+  - sin listado previo, vuelve a `/`;
+  - el store se escribe en `sessionStorage`, no en `localStorage`
 
 ## 9. Cierre
 

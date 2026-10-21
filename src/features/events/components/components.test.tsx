@@ -12,7 +12,7 @@ describe('EventCard', () => {
     const event = makeEvent({ name: 'Rock Night', status: 'CANCELLED', price: 150 });
     render(
       <MemoryRouter>
-        <EventCard event={event} listSearch="" />
+        <EventCard event={event} />
       </MemoryRouter>,
     );
 
@@ -76,7 +76,6 @@ describe('EventList', () => {
     isLoading: false,
     error: null,
     page: 1,
-    listSearch: '',
     onRetry: () => {},
     onFirstPage: () => {},
   };

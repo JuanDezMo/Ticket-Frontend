@@ -78,13 +78,13 @@ Reglas (las verifica dependency-cruiser):
 
 ## 5. Manejo de estado
 
-| Tipo de estado            | Dónde vive             | Ejemplos                                                 |
-| ------------------------- | ---------------------- | -------------------------------------------------------- |
-| Datos del servidor        | TanStack Query         | eventos, seats, mis tickets                              |
-| Estado global del cliente | Zustand                | sesión (token, rol), reserva en curso, seat seleccionado |
-| Estado local              | `useState`             | campo abierto, diálogo visible                           |
-| Estado de la URL          | parámetros de búsqueda | filtros y página del listado                             |
-| Formularios               | react-hook-form        | login, checkout, crear evento                            |
+| Tipo de estado            | Dónde vive             | Ejemplos                                                                              |
+| ------------------------- | ---------------------- | ------------------------------------------------------------------------------------- |
+| Datos del servidor        | TanStack Query         | eventos, seats, mis tickets                                                           |
+| Estado global del cliente | Zustand                | sesión (token, rol), reserva en curso, seat seleccionado, últimos filtros del listado |
+| Estado local              | `useState`             | campo abierto, diálogo visible                                                        |
+| Estado de la URL          | parámetros de búsqueda | filtros y página del listado                                                          |
+| Formularios               | react-hook-form        | login, checkout, crear evento                                                         |
 
 Reglas:
 
@@ -92,7 +92,7 @@ Reglas:
 - Cada store es pequeño y tiene un solo propósito (`session.store.ts`, `reservations/store.ts`).
 - Los componentes leen con selectores (`useSessionStore((s) => s.role)`) para no re-renderizar de más.
 - Las acciones viven dentro del store (`login`, `logout`, `setReservation`, `clearReservation`).
-- `persist` solo donde se justifica: sesión en `localStorage` y reserva en curso en `sessionStorage` (mitiga el hueco 3 de `docs/api-integration.md`). Nunca datos de tarjeta.
+- `persist` solo donde se justifica: sesión en `localStorage`; reserva en curso (mitiga el hueco 3 de `docs/api-integration.md`) y últimos filtros del listado (para "Back to events") en `sessionStorage`. El seat seleccionado vive solo en memoria. Nunca datos de tarjeta.
 
 ## 6. SOLID aplicado
 

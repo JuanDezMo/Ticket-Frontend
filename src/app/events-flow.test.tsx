@@ -9,7 +9,7 @@ import { renderRoute, signInAs } from '@/test/render';
 describe('events flow', () => {
   afterEach(() => useSeatSelectionStore.getState().clear());
 
-  it('filters, opens an event, signs in to see the seats and goes back with the filter', async () => {
+  it('keeps the filter through the login when going back from the detail', async () => {
     const concert = makeEvent({ name: 'Rock Night', type: 'CONCERT' });
     setEvents([concert, makeEvent({ name: 'Tech Meetup', type: 'MEETUP' })]);
     setSeats(concert.id, makeSeats(20));
@@ -31,9 +31,11 @@ describe('events flow', () => {
     expect(await screen.findByText('20 of 20 seats available')).toBeInTheDocument();
     expect(router.state.location.pathname).toBe(`/events/${concert.id}`);
 
-    // 4. "Back to events" lleva al listado (el filtro se perdió al pasar por el login)
+    // 4. "Back to events" conserva el filtro aunque se pasó por el login
     await user.click(screen.getByRole('link', { name: 'Back to events' }));
+    expect(router.state.location.search).toBe('?type=CONCERT');
     expect(await screen.findByRole('heading', { name: 'Rock Night' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Tech Meetup' })).not.toBeInTheDocument();
   });
 
   it('keeps the filter when going back from the detail', async () => {

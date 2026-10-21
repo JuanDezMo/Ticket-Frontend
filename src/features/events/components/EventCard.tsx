@@ -7,17 +7,10 @@ import { EVENT_TYPE_LABELS } from '../constants';
 import type { Event } from '../types';
 import { EventStatusBadge } from './EventStatusBadge';
 
-interface EventCardProps {
-  event: Event;
-  // Query string del listado, para que "Back to events" conserve los filtros
-  listSearch: string;
-}
-
-export function EventCard({ event, listSearch }: EventCardProps) {
+export function EventCard({ event }: { event: Event }) {
   return (
     <Link
       to={ROUTES.eventDetail(event.id)}
-      state={{ listSearch }}
       className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
     >
       <Card className="hover:bg-muted/50 h-full transition-colors">

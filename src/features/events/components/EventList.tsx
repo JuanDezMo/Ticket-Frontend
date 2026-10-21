@@ -11,7 +11,6 @@ interface EventListProps {
   isLoading: boolean;
   error: unknown;
   page: number;
-  listSearch: string;
   onRetry: () => void;
   onFirstPage: () => void;
 }
@@ -23,7 +22,6 @@ export function EventList({
   isLoading,
   error,
   page,
-  listSearch,
   onRetry,
   onFirstPage,
 }: EventListProps) {
@@ -65,7 +63,7 @@ export function EventList({
     <ul className={GRID}>
       {events.map((event) => (
         <li key={event.id}>
-          <EventCard event={event} listSearch={listSearch} />
+          <EventCard event={event} />
         </li>
       ))}
     </ul>

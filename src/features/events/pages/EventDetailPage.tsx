@@ -1,5 +1,5 @@
 import { ArrowLeftIcon } from 'lucide-react';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { SeatMap, SignInToSeeSeats } from '@/features/seats';
 import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
 import { getErrorMessage } from '@/shared/api/error-messages';
@@ -10,16 +10,8 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { StatusMessage } from '@/shared/ui/status-message';
 import { EventDetails } from '../components/EventDetails';
 import { getEventNotice } from '../event-notice';
-import { useEvent } from '../hooks';
+import { useBackToEventsPath, useEvent } from '../hooks';
 import { isEventId } from '../schemas';
-
-// El listado deja su query string en el state para volver con los mismos filtros
-function readListSearch(state: unknown): string {
-  if (state && typeof state === 'object' && 'listSearch' in state) {
-    return typeof state.listSearch === 'string' ? state.listSearch : '';
-  }
-  return '';
-}
 
 function isNotFound(error: unknown): boolean {
   return error instanceof ApiError && error.code === ERROR_CODES.EVENT_NOT_FOUND;
@@ -27,10 +19,9 @@ function isNotFound(error: unknown): boolean {
 
 export function EventDetailPage() {
   const { id } = useParams();
-  const location = useLocation();
   const role = useSessionStore((state) => state.role);
   const eventQuery = useEvent(id);
-  const backTo = `${ROUTES.home}${readListSearch(location.state)}`;
+  const backTo = useBackToEventsPath();
 
   const backLink = (
     <Button asChild variant="ghost" className="self-start">

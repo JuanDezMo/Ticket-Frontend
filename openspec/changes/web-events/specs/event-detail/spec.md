@@ -5,7 +5,7 @@ Muestra la información completa de un evento y, a quien tiene sesión, el estad
 ## ADDED Requirements
 
 ### Requirement: Detalle del evento
-La página "/events/:id" SHALL mostrar, a partir de `GET /events/:id` y sin exigir sesión, el nombre, la descripción, el tipo, el lugar, las fechas y horas de inicio y fin en la zona horaria del navegador, el precio, la capacidad y el estado del evento. SHALL ofrecer un enlace "Back to events" que vuelve al listado con los filtros que tenía.
+La página "/events/:id" SHALL mostrar, a partir de `GET /events/:id` y sin exigir sesión, el nombre, la descripción, el tipo, el lugar, las fechas y horas de inicio y fin en la zona horaria del navegador, el precio, la capacidad y el estado del evento. SHALL ofrecer un enlace "Back to events" que vuelve al listado con los últimos filtros y la página que el usuario usó en esa pestaña, aunque haya iniciado sesión o recargado la página en el medio. Si no usó el listado en esa pestaña, vuelve a "/".
 
 #### Scenario: Visitante abre un evento
 - **WHEN** un visitante abre "/events/<id>" de un evento existente
@@ -14,6 +14,18 @@ La página "/events/:id" SHALL mostrar, a partir de `GET /events/:id` y sin exig
 #### Scenario: Volver al listado
 - **WHEN** el usuario llegó desde el listado filtrado y pulsa "Back to events"
 - **THEN** vuelve al listado con los mismos filtros y página
+
+#### Scenario: Volver después de iniciar sesión
+- **WHEN** un visitante abre un evento desde el listado filtrado, inicia sesión desde el mapa de seats y pulsa "Back to events"
+- **THEN** vuelve al listado con los mismos filtros y página
+
+#### Scenario: Volver después de recargar
+- **WHEN** el usuario recarga el detalle y pulsa "Back to events"
+- **THEN** vuelve al listado con los mismos filtros y página
+
+#### Scenario: Sin listado previo
+- **WHEN** el usuario abre el detalle directo, sin haber usado el listado en esa pestaña, y pulsa "Back to events"
+- **THEN** vuelve a "/"
 
 #### Scenario: Recargar el detalle
 - **WHEN** el usuario recarga "/events/<id>"
