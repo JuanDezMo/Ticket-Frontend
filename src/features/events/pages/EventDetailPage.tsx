@@ -4,6 +4,7 @@ import { SeatMap, SignInToSeeSeats } from '@/features/seats';
 import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
 import { getErrorMessage } from '@/shared/api/error-messages';
 import { ROUTES } from '@/shared/config/routes';
+import { formatDateTime } from '@/shared/lib/format-date';
 import { useSessionStore } from '@/shared/session/session.store';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
@@ -24,7 +25,7 @@ export function EventDetailPage() {
   const backTo = useBackToEventsPath();
 
   const backLink = (
-    <Button asChild variant="ghost" className="self-start">
+    <Button asChild variant="ghost" className="-ml-3 self-start">
       <Link to={backTo}>
         <ArrowLeftIcon aria-hidden="true" />
         Back to events
@@ -57,7 +58,12 @@ export function EventDetailPage() {
       {backLink}
       <EventDetails event={event} notice={notice} />
       {role ? (
-        <SeatMap eventId={event.id} eventBookable={notice === null} />
+        <SeatMap
+          eventId={event.id}
+          eventBookable={notice === null}
+          price={event.price}
+          eventLine={`${event.name} · ${formatDateTime(event.startDate)}`}
+        />
       ) : (
         <SignInToSeeSeats returnTo={ROUTES.eventDetail(event.id)} />
       )}

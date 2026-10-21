@@ -25,7 +25,7 @@ THESIS: Your seat becomes your pass. The event, the row and the hold are printed
 
 OWN-WORLD: Gloss tour laminate. Laminate black in dark, white card in light, with a fluoro-orange tier band and signal yellow. Heavy expanded block caps carry codes, dates and prices at three fixed steps, and a workhorse sans sets the text. Panels carry a punched lanyard slot and a hairline gloss edge. State changes land as hard two-frame steps.
 
-STORY: The visitor sees tonight's passes and reads the date and seats left at a glance. Opening one, they see the house as a block-code grid. Picking a seat prints C7 and the price on their pass, and they trust the hold will be shown honestly.
+STORY: The visitor sees tonight's passes and reads the date at a glance (the list API carries capacity only, per PRODUCT.md, so seats left read on the detail page, never on the cards). Opening one, they see the house as a block-code grid. Picking a seat prints C7 and the price on their pass, and they trust the hold will be shown honestly.
 
 FIRST VIEWPORT: Mobile detail. At the top is the laminate head: tier band, date in block caps, then name and venue. Below it, the seat grid runs in fixed columns with a stage edge marker. At the thumb edge sits the docked pass, showing the seat code, the price and a disabled "Reserve (held 10 min)". The rose and orange accents appear only on pressable things.
 

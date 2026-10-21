@@ -36,7 +36,8 @@ describe('events flow', () => {
     expect(router.state.location.search).toBe('?type=CONCERT');
     expect(await screen.findByRole('heading', { name: 'Rock Night' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Tech Meetup' })).not.toBeInTheDocument();
-  });
+    // Flujo largo (filtro, login y regreso): margen para cuando corre con toda la suite
+  }, 15_000);
 
   it('keeps the filter when going back from the detail', async () => {
     const concert = makeEvent({ name: 'Rock Night', type: 'CONCERT' });

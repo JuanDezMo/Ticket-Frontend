@@ -30,6 +30,11 @@ describe('AppLayout', () => {
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
   });
 
+  it('offers the theme menu in the header', async () => {
+    renderRoute('/');
+    expect(await screen.findByRole('button', { name: 'Theme: System' })).toBeInTheDocument();
+  });
+
   it('goes home when clicking the app name', async () => {
     const { user, router } = renderRoute('/register');
     await user.click(await screen.findByRole('link', { name: 'Tickets' }));

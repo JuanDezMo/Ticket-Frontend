@@ -29,7 +29,7 @@ export function EventList({
     return (
       <div className={GRID} aria-label="Loading events">
         {Array.from({ length: EVENTS_PAGE_SIZE / 2 }, (_, index) => (
-          <Skeleton key={index} className="h-40 rounded-xl" />
+          <Skeleton key={index} className="h-32 rounded-lg" />
         ))}
       </div>
     );

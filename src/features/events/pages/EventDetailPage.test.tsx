@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { useSeatSelectionStore } from '@/features/seats/store';
 import { useEventListStore } from '../store';
@@ -208,10 +208,12 @@ describe('EventDetailPage', () => {
       setSeats(event.id, makeSeats(20, { A3: 'RESERVED' }));
       await user.click(screen.getByRole('button', { name: 'Refresh' }));
 
-      expect(
-        await screen.findByText('Your selected seat is no longer available'),
-      ).toBeInTheDocument();
+      expect(await screen.findByText('A3 was just taken. Pick another seat')).toBeInTheDocument();
       expect(useSeatSelectionStore.getState().seatLabel).toBeNull();
+      // El foco vuelve al mapa para elegir otro seat
+      await waitFor(() =>
+        expect(document.activeElement).toHaveAccessibleName('Seat A1, Available'),
+      );
     });
   });
 });

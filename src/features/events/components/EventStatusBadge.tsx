@@ -1,9 +1,14 @@
 import { Badge } from '@/shared/ui/badge';
-import { EVENT_STATUS_LABELS } from '../constants';
-import { EVENT_STATUSES, type EventStatus } from '../types';
+import { EVENT_NOTICES, type EventNotice } from '../event-notice';
 
-// Solo se marca el estado que el usuario debe notar: los activos no llevan etiqueta
-export function EventStatusBadge({ status }: { status: EventStatus }) {
-  if (status !== EVENT_STATUSES.CANCELLED) return null;
-  return <Badge variant="destructive">{EVENT_STATUS_LABELS[status]}</Badge>;
+const BADGES: Record<EventNotice, { label: string; variant: 'destructive' | 'outline' }> = {
+  [EVENT_NOTICES.CANCELLED]: { label: 'Cancelled', variant: 'destructive' },
+  [EVENT_NOTICES.STARTED]: { label: 'Started', variant: 'outline' },
+};
+
+// Solo se marca lo que el usuario debe notar: los eventos reservables no llevan etiqueta
+export function EventStatusBadge({ notice }: { notice: EventNotice | null }) {
+  if (!notice) return null;
+  const { label, variant } = BADGES[notice];
+  return <Badge variant={variant}>{label}</Badge>;
 }

@@ -1,28 +1,45 @@
+import { CheckIcon, ClockIcon, LockIcon, XIcon, type LucideIcon } from 'lucide-react';
 import type { SeatStatus } from './types';
 
-interface SeatStatusStyle {
+interface SeatVisual {
   label: string;
+  // Forma y color del seat; los colores salen de las variables de cada tema (index.css)
   className: string;
+  // Símbolo en la esquina: el estado no depende solo del color
+  icon: LucideIcon | null;
+  // Fondo sólido bajo el número cuando la forma es un patrón (rayado)
+  numberClassName?: string;
 }
 
 // Un estado nuevo es una entrada más; el texto también va en el nombre accesible
-export const SEAT_STATUS_STYLE: Record<SeatStatus, SeatStatusStyle> = {
+export const SEAT_STATUS_STYLE: Record<SeatStatus, SeatVisual> = {
   AVAILABLE: {
     label: 'Available',
-    className: 'border-emerald-300 bg-emerald-50 text-emerald-900',
+    className: 'border-seat-available-border bg-seat-available-bg text-seat-available-fg',
+    icon: null,
   },
   RESERVED: {
     label: 'Reserved',
-    className: 'border-amber-300 bg-amber-100 text-amber-900',
+    className:
+      'border-seat-reserved-border bg-seat-reserved-bg text-seat-reserved-fg bg-[repeating-linear-gradient(135deg,var(--seat-reserved-hatch)_0_4px,transparent_4px_9px)]',
+    icon: ClockIcon,
+    numberClassName: 'rounded-sm bg-seat-reserved-bg px-0.5',
   },
   SOLD: {
     label: 'Sold',
-    className: 'border-slate-400 bg-slate-300 text-slate-700',
+    className: 'border-seat-sold-border bg-seat-sold-bg text-seat-sold-fg',
+    icon: XIcon,
   },
   BLOCKED: {
     label: 'Blocked',
-    className: 'border-red-300 bg-red-100 text-red-800 line-through',
+    className: 'border-dashed border-seat-blocked-border bg-seat-blocked-bg text-seat-blocked-fg',
+    icon: LockIcon,
   },
 };
 
-export const SELECTED_SEAT_CLASS = 'border-primary bg-primary text-primary-foreground';
+export const SELECTED_SEAT_STYLE: SeatVisual = {
+  label: 'Selected',
+  className:
+    'border-seat-selected-border bg-seat-selected-bg text-seat-selected-fg shadow-[0_0_0_2px_var(--seat-selected-bg)]',
+  icon: CheckIcon,
+};

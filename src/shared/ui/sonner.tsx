@@ -6,11 +6,14 @@ import {
   OctagonXIcon,
   Loader2Icon,
 } from 'lucide-react';
+import { useResolvedTheme } from '@/shared/theme/use-theme';
 
+// Las notificaciones siguen el tema activo
 const Toaster = ({ ...props }: ToasterProps) => {
+  const theme = useResolvedTheme();
   return (
     <Sonner
-      theme="light"
+      theme={theme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

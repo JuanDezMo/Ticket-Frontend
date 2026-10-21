@@ -13,7 +13,7 @@ export function EventsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Events</h1>
+      <h1 className="display text-code-lg">Events</h1>
       <EventFilters
         filters={filters}
         onChange={setFilter}
@@ -28,7 +28,8 @@ export function EventsPage() {
         onRetry={() => void events.refetch()}
         onFirstPage={() => setPage(FIRST_PAGE)}
       />
-      {meta && meta.total > 0 && (
+      {/* Con una sola página no hace falta paginar */}
+      {meta && meta.totalPages > 1 && (
         <Pagination page={page} totalPages={meta.totalPages} onPageChange={setPage} />
       )}
     </div>
