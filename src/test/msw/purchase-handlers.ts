@@ -14,7 +14,6 @@ const GATEWAY_ERRORS_BEFORE_CARD_PROBLEM = 2;
 
 let reservations: Reservation[] = [];
 let tickets: MyTicket[] = [];
-const issuedByReservation = new Map<string, IssuedTicket>();
 const gatewayErrors = new Map<string, number>();
 
 // Cuerpos recibidos, para comprobar cuántas solicitudes envió la UI
@@ -46,7 +45,6 @@ export function cancelEventReservations(eventId: string) {
 export function resetPurchaseData() {
   reservations = [];
   tickets = [];
-  issuedByReservation.clear();
   gatewayErrors.clear();
   reserveRequests.length = 0;
   purchaseRequests.length = 0;
@@ -160,25 +158,39 @@ export const purchaseHandlers = [
 
   http.post(apiPath('/tickets/purchase'), async ({ request }) => {
     const body = (await request.json()) as {
-      reservationId: string;
+      reservationIds?: unknown;
+      reservationId?: unknown;
       card: { number: string };
     };
     purchaseRequests.push(body);
-    const reservation = getReservation(body.reservationId);
-    if (!reservation) return notFound();
+    const ids = body.reservationIds;
+    // Igual que la API: el campo antiguo ya no existe y la lista va de 1 a 8
+    if (!Array.isArray(ids) || ids.length < 1 || ids.length > 8 || 'reservationId' in body) {
+      return HttpResponse.json(errorBody('VALIDATION_ERROR', 'reservationIds is required'), {
+        status: 400,
+      });
+    }
+    const found = (ids as string[]).map(getReservation);
+    if (found.some((reservation) => !reservation)) return notFound();
+    const group = found as Reservation[];
+    if (new Set(group.map((reservation) => reservation.eventId)).size > 1) {
+      return HttpResponse.json(errorBody('RESERVATIONS_MISMATCH'), { status: 400 });
+    }
 
-    const already = issuedByReservation.get(reservation.id);
-    if (already) return HttpResponse.json(already, { status: 200 });
-
-    const current = effective(reservation);
-    if (current.status !== 'ACTIVE') return conflict(INACTIVE_CODE[current.status]);
+    // El primer problema, recorriendo las reservas en el orden de la solicitud
+    for (const reservation of group) {
+      const current = effective(reservation);
+      if (current.status === 'CONFIRMED') return conflict('DUPLICATE_PAYMENT');
+      if (current.status !== 'ACTIVE') return conflict(INACTIVE_CODE[current.status]);
+    }
 
     const number = body.card.number;
+    const groupKey = [...(ids as string[])].sort().join(',');
     if (number.endsWith(REJECTED_ENDING)) {
       return HttpResponse.json(errorBody('PAYMENT_REJECTED'), { status: 402 });
     }
     if (number.endsWith(GATEWAY_ERROR_ENDING)) {
-      const key = `${reservation.id}:${number}`;
+      const key = `${groupKey}:${number}`;
       const failures = gatewayErrors.get(key) ?? 0;
       gatewayErrors.set(key, failures + 1);
       return failures >= GATEWAY_ERRORS_BEFORE_CARD_PROBLEM
@@ -186,35 +198,43 @@ export const purchaseHandlers = [
         : HttpResponse.json(errorBody('PAYMENT_GATEWAY_ERROR'), { status: 502 });
     }
 
+    const orderId = crypto.randomUUID();
     const issuedAt = new Date().toISOString();
-    const issued: IssuedTicket = {
-      id: crypto.randomUUID(),
-      reservationId: reservation.id,
-      eventId: reservation.eventId,
-      seat: reservation.seat,
-      status: 'ISSUED',
-      amount: reservation.amount,
-      transactionId: `txn_${reservation.id.slice(0, 8)}`,
-      issuedAt,
-    };
-    issuedByReservation.set(reservation.id, issued);
-    setStatus(reservation, 'CONFIRMED');
-    setSeatStatus(reservation, 'SOLD');
-    const event = findEvent(reservation.eventId);
-    tickets.unshift({
-      id: issued.id,
-      status: 'ISSUED',
-      seat: issued.seat,
-      amount: issued.amount,
-      issuedAt,
-      event: {
-        id: reservation.eventId,
-        name: event?.name ?? 'Event',
-        venue: event?.venue ?? 'Venue',
-        startDate: event?.startDate ?? issuedAt,
-      },
+    const issuedTickets = group.map((reservation): IssuedTicket => {
+      const issued: IssuedTicket = {
+        id: crypto.randomUUID(),
+        reservationId: reservation.id,
+        eventId: reservation.eventId,
+        seat: reservation.seat,
+        status: 'ISSUED',
+        amount: reservation.amount,
+        transactionId: `txn_${orderId.slice(0, 8)}`,
+        issuedAt,
+      };
+      setStatus(reservation, 'CONFIRMED');
+      setSeatStatus(reservation, 'SOLD');
+      const event = findEvent(reservation.eventId);
+      tickets.unshift({
+        id: issued.id,
+        status: 'ISSUED',
+        seat: issued.seat,
+        amount: issued.amount,
+        issuedAt,
+        event: {
+          id: reservation.eventId,
+          name: event?.name ?? 'Event',
+          venue: event?.venue ?? 'Venue',
+          startDate: event?.startDate ?? issuedAt,
+        },
+      });
+      return issued;
     });
-    return HttpResponse.json(issued, { status: 201 });
+    // El monto se suma en centavos, como el servidor
+    const cents = issuedTickets.reduce((sum, ticket) => sum + Math.round(ticket.amount * 100), 0);
+    return HttpResponse.json(
+      { orderId, amount: cents / 100, tickets: issuedTickets },
+      { status: 201 },
+    );
   }),
 
   http.get(apiPath('/tickets/me'), ({ request }) => {

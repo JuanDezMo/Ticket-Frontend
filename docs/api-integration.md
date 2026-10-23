@@ -4,31 +4,31 @@ Fuente del contrato: `docs/architecture.md` (sección 11) y `docs/business-rules
 
 ## 1. Endpoints por pantalla
 
-| Pantalla                                                                                         | Endpoint                                           | Rol          |
-| ------------------------------------------------------------------------------------------------ | -------------------------------------------------- | ------------ |
-| Registro / Login                                                                                 | `POST /auth/register`, `POST /auth/login`          | público      |
-| Listado de eventos (`page`, `pageSize` 1–20, `status`, `type`, `startFrom`, `startTo`, `search`) | `GET /events`                                      | público      |
-| Detalle de evento (`/events/:id`)                                                                | `GET /events/:id`                                  | público      |
-| Mapa de seats                                                                                    | `GET /events/:id/seats?status=`                    | autenticado  |
-| Reservar seat                                                                                    | `POST /reservations` `{ eventId, seats }`          | USER         |
-| Reserva en curso (recarga, cuenta regresiva)                                                     | `GET /reservations/:id`                            | USER (dueño) |
-| Cancelar mi reserva                                                                              | `POST /reservations/:id/cancel`                    | USER (dueño) |
-| Checkout                                                                                         | `POST /tickets/purchase` `{ reservationId, card }` | USER         |
-| Mis tickets                                                                                      | `GET /tickets/me`                                  | USER         |
-| Crear evento                                                                                     | `POST /events`                                     | ADMIN        |
-| Cancelar evento                                                                                  | `POST /events/:id/cancel`                          | ADMIN        |
-| Crear usuario                                                                                    | `POST /users` `{ email, password, role }`          | ADMIN        |
+| Pantalla                                                                                         | Endpoint                                            | Rol          |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------- | ------------ |
+| Registro / Login                                                                                 | `POST /auth/register`, `POST /auth/login`           | público      |
+| Listado de eventos (`page`, `pageSize` 1–20, `status`, `type`, `startFrom`, `startTo`, `search`) | `GET /events`                                       | público      |
+| Detalle de evento (`/events/:id`)                                                                | `GET /events/:id`                                   | público      |
+| Mapa de seats                                                                                    | `GET /events/:id/seats?status=`                     | autenticado  |
+| Reservar seat                                                                                    | `POST /reservations` `{ eventId, seats }`           | USER         |
+| Reserva en curso (recarga, cuenta regresiva)                                                     | `GET /reservations/:id`                             | USER (dueño) |
+| Cancelar mi reserva                                                                              | `POST /reservations/:id/cancel`                     | USER (dueño) |
+| Checkout                                                                                         | `POST /tickets/purchase` `{ reservationIds, card }` | USER         |
+| Mis tickets                                                                                      | `GET /tickets/me`                                   | USER         |
+| Crear evento                                                                                     | `POST /events`                                      | ADMIN        |
+| Cancelar evento                                                                                  | `POST /events/:id/cancel`                           | ADMIN        |
+| Crear usuario                                                                                    | `POST /users` `{ email, password, role }`           | ADMIN        |
 
 Implementado en `web-events`: listado (`/`, 12 por página, filtros en la URL), detalle (`/events/:id`) y mapa de seats con selección de un seat (store de Zustand `features/seats/store.ts`). Los montos (`price`, `amount`) se muestran en USD.
 
 Implementado en `web-purchase`:
 
-| Pantalla                                   | Ruta                       | Qué hace                                                                                                                                                                                                                                               |
-| ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pase de selección (`features/seats`)       | `/events/:id`              | "Reserve" envía una sola `POST /reservations` con la lista de seats (todo o nada), guarda las reservas en curso como lista (`features/reservations/hold.store.ts`, `sessionStorage`, clave `ticket-hold`, versión 2) y lleva al checkout de la primera |
-| Aviso de reserva (`features/reservations`) | todas, menos el checkout   | Seat, tiempo restante y "Continue to checkout"; valida la reserva con `GET /reservations/:id` y la descarta si no está `ACTIVE`                                                                                                                        |
-| Checkout (`features/tickets`)              | `/checkout/:reservationId` | Resumen, cuenta regresiva, formulario de tarjeta y `POST /tickets/purchase`; una vista por estado de la reserva y por resultado del pago (`purchase-errors.ts`); "Cancel reservation" con confirmación                                                 |
-| Mis tickets (`features/tickets`)           | `/my-tickets?page=`        | `GET /tickets/me` paginado de a 12, con "Cancelled by organizer" para `CANCELLED_BY_EVENT`                                                                                                                                                             |
+| Pantalla                                   | Ruta                                                     | Qué hace                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pase de selección (`features/seats`)       | `/events/:id`                                            | "Reserve" envía una sola `POST /reservations` con la lista de seats (todo o nada), guarda las reservas en curso como lista (`features/reservations/hold.store.ts`, `sessionStorage`, clave `ticket-hold`, versión 2) y lleva al checkout de la primera                                                                                                                    |
+| Aviso de reserva (`features/reservations`) | todas, menos el checkout                                 | Seat, tiempo restante y "Continue to checkout"; valida la reserva con `GET /reservations/:id` y la descarta si no está `ACTIVE`                                                                                                                                                                                                                                           |
+| Checkout (`features/tickets`)              | `/checkout/:reservationId` y `/checkout?ids=a,b` (1 a 8) | Resumen del grupo, cuenta regresiva de la que vence primero, un formulario de tarjeta y una sola `POST /tickets/purchase` con las reservas vigentes (el estado de cada una sale de `GET /reservations/:id`, porque la API no nombra la que venció); una vista por estado y por resultado del pago (`purchase-errors.ts`); "Cancel all" y "Remove <seat>" con confirmación |
+| Mis tickets (`features/tickets`)           | `/my-tickets?page=`                                      | `GET /tickets/me` paginado de a 12, con "Cancelled by organizer" para `CANCELLED_BY_EVENT`                                                                                                                                                                                                                                                                                |
 
 Implementado en `web-admin` (solo ADMIN):
 

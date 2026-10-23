@@ -57,7 +57,8 @@ describe('card data privacy', () => {
     expect(await screen.findByText('Payment service error. Please try again')).toBeInTheDocument();
     const stored = everythingStored(queryClient);
     expect(stored).not.toContain(CARD_NUMBER);
-    expect(stored).not.toContain(CVV);
+    // Entre comillas: como valor guardado, no como parte de un UUID al azar
+    expect(stored).not.toContain(`"${CVV}"`);
     expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
   });
 
@@ -72,7 +73,8 @@ describe('card data privacy', () => {
     ).toBeInTheDocument();
     const stored = everythingStored(queryClient);
     expect(stored).not.toContain(CARD_NUMBER_REJECTED);
-    expect(stored).not.toContain(CVV);
+    // Entre comillas: como valor guardado, no como parte de un UUID al azar
+    expect(stored).not.toContain(`"${CVV}"`);
   });
 
   it('shows an empty form after a reload', async () => {

@@ -229,7 +229,7 @@ export function SeatMap({
               allowance === 0 && holdsHere.length > 0
                 ? {
                     count: holdsHere.length,
-                    checkoutPath: ROUTES.checkout(holdsHere[0]?.reservationId ?? ''),
+                    checkoutPath: ROUTES.checkoutFor(holdsHere.map((hold) => hold.reservationId)),
                   }
                 : null
             }

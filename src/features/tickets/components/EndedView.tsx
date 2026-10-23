@@ -9,6 +9,8 @@ interface EndedViewProps {
   kind: EndedKind;
   // Para volver al evento de la reserva; sin él ("Reservation not found") se vuelve al listado
   eventId?: string;
+  // Cuántas reservas tenía el enlace: con varias, el texto va en plural
+  count?: number;
 }
 
 const ENDED_TITLES: Record<EndedKind, string> = {
@@ -20,7 +22,7 @@ const ENDED_TITLES: Record<EndedKind, string> = {
 };
 
 /** Mensaje y siguiente paso cuando la reserva ya no se puede pagar. */
-export function EndedView({ kind, eventId }: EndedViewProps) {
+export function EndedView({ kind, eventId, count = 1 }: EndedViewProps) {
   const eventsPath = useBackToEventsPath();
 
   const action = {
@@ -37,7 +39,11 @@ export function EndedView({ kind, eventId }: EndedViewProps) {
 
   return (
     <StatusMessage
-      title={ENDED_TITLES[kind]}
+      title={
+        kind === ENDED_KINDS.PAID && count > 1
+          ? 'These reservations are already paid'
+          : ENDED_TITLES[kind]
+      }
       action={
         <Button asChild variant="outline">
           <Link to={action.to}>{action.label}</Link>

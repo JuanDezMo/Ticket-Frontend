@@ -37,14 +37,14 @@ export const routes: RouteObject[] = [
               </GuestOnly>
             ),
           },
-          {
-            path: ROUTES.checkoutPattern,
+          ...[ROUTES.checkoutPattern, ROUTES.checkoutGroup].map((path) => ({
+            path,
             element: (
               <RequireRole roles={[ROLES.USER]}>
                 <CheckoutPage />
               </RequireRole>
             ),
-          },
+          })),
           {
             path: ROUTES.myTickets,
             element: (

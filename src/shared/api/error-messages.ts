@@ -24,11 +24,16 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   RESERVATION_ALREADY_CANCELLED: 'This reservation was cancelled',
   RESERVATION_ALREADY_CONFIRMED: 'This reservation is already paid',
   EVENT_CANCELLED: 'This event has been cancelled',
+  DUPLICATE_PAYMENT: 'These reservations were already paid. Check your tickets',
+  PAYMENT_IN_PROGRESS: 'Your payment is being processed. Try again in a few seconds',
+  // Un defecto del cliente (mezcló eventos): no hay nada que el usuario pueda corregir
+  RESERVATIONS_MISMATCH: GENERIC_ERROR_MESSAGE,
+  ORDER_AMOUNT_TOO_LARGE: 'The order total exceeds the maximum allowed. Pay fewer seats at once',
   PAYMENT_REJECTED: 'Payment was rejected. Please try another card',
   CARD_PROBLEM: 'The card has problems. Please use another payment method',
   PAYMENT_GATEWAY_ERROR: 'Payment service error. Please try again',
   PAYMENT_GATEWAY_TIMEOUT:
-    'Payment service timed out. Please try again. You will not be charged twice',
+    'Payment service timed out. Please try again in a few seconds. You will not be charged twice',
   EMAIL_ALREADY_EXISTS: 'An account with this email already exists',
   INTERNAL_ERROR: GENERIC_ERROR_MESSAGE,
   UNKNOWN: GENERIC_ERROR_MESSAGE,

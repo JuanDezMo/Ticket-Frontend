@@ -8,7 +8,7 @@ import type { PurchaseRequest } from './types';
 export const MY_TICKETS_PAGE_SIZE = 12;
 
 /**
- * Pago de una reserva. La tarjeta no queda en la caché: la mutación no se conserva (`gcTime: 0`)
+ * Pago de una o varias reservas en una sola compra. La tarjeta no queda en la caché: la mutación no se conserva (`gcTime: 0`)
  * y se reinicia al terminar. Una segunda llamada mientras hay un pago en curso se ignora.
  */
 export function usePurchase() {

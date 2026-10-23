@@ -26,6 +26,25 @@ export function useReservation(id: string | undefined) {
   });
 }
 
+/** Varias reservas por id, en el orden pedido; `refetchAll` vuelve a leer todas. */
+export function useReservations(ids: readonly string[]) {
+  const results = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: reservationKeys.detail(id),
+      queryFn: () => reservationsApi.getById(id),
+      enabled: isUuid(id),
+      refetchInterval: refetchWhileActive,
+    })),
+  });
+  const reservations = results.map((result) => result.data);
+  return {
+    reservations,
+    isLoading: results.some((result) => result.isLoading),
+    error: results.find((result) => result.error)?.error ?? null,
+    refetchAll: () => Promise.all(results.map((result) => result.refetch())),
+  };
+}
+
 /** Reserva los seats de la lista en una sola solicitud (todo o nada). */
 export function useReserveSeats() {
   const queryClient = useQueryClient();

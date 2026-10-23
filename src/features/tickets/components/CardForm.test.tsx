@@ -115,7 +115,7 @@ describe('CardForm', () => {
     [
       'PAYMENT_GATEWAY_TIMEOUT',
       504,
-      'Payment service timed out. Please try again. You will not be charged twice',
+      'Payment service timed out. Please try again in a few seconds. You will not be charged twice',
     ],
   ])('keeps the data after %s so the user can retry', async (code, status, message) => {
     const pay = vi.fn().mockRejectedValue(new ApiError(status, code, 'x'));

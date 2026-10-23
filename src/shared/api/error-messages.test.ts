@@ -40,6 +40,9 @@ describe('getErrorMessage', () => {
       ERROR_CODES.SEAT_NOT_AVAILABLE,
       ERROR_CODES.SEAT_LIMIT_REACHED,
       ERROR_CODES.HOLD_LIMIT_REACHED,
+      ERROR_CODES.DUPLICATE_PAYMENT,
+      ERROR_CODES.PAYMENT_IN_PROGRESS,
+      ERROR_CODES.ORDER_AMOUNT_TOO_LARGE,
       ERROR_CODES.EVENT_NOT_ACTIVE,
     ];
     for (const code of codes) {
@@ -50,7 +53,7 @@ describe('getErrorMessage', () => {
   it('tells the user that retrying a timed out payment is safe', () => {
     const error = new ApiError(504, ERROR_CODES.PAYMENT_GATEWAY_TIMEOUT, 'timeout');
     expect(getErrorMessage(error)).toBe(
-      'Payment service timed out. Please try again. You will not be charged twice',
+      'Payment service timed out. Please try again in a few seconds. You will not be charged twice',
     );
   });
 });

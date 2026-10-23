@@ -155,30 +155,34 @@ describe('CheckoutPage payment', () => {
     expect(purchaseRequests).toHaveLength(1);
   });
 
-  it('shows the same confirmation when the purchase was already made (200)', async () => {
-    const { reservation, event } = seed();
+  it('shows "already paid" and drops the hold when the purchase was already made (DUPLICATE_PAYMENT)', async () => {
+    const { reservation } = seed();
+    useHoldStore.getState().add([reservation]);
     server.use(
       http.post(apiPath('/tickets/purchase'), () =>
-        HttpResponse.json(
-          {
-            id: 't1',
-            reservationId: reservation.id,
-            eventId: event.id,
-            seat: 'C7',
-            status: 'ISSUED',
-            amount: 49.99,
-            transactionId: 'txn_1',
-            issuedAt: new Date().toISOString(),
-          },
-          { status: 200 },
-        ),
+        HttpResponse.json(errorBody('DUPLICATE_PAYMENT'), { status: 409 }),
       ),
     );
     const { user } = renderRoute(ROUTES.checkout(reservation.id));
 
     await pay(user);
 
-    expect(await screen.findByRole('heading', { name: 'Ticket issued' })).toBeInTheDocument();
+    expect(await screen.findByText('This reservation is already paid')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View my tickets' })).toBeInTheDocument();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
+  });
+
+  it('sends the purchase with a list of one reservation and no amount', async () => {
+    const { reservation } = seed();
+    const { user } = renderRoute(ROUTES.checkout(reservation.id));
+
+    await pay(user);
+
+    await screen.findByRole('heading', { name: 'Ticket issued' });
+    expect(purchaseRequests).toHaveLength(1);
+    expect(purchaseRequests[0]).toMatchObject({ reservationIds: [reservation.id] });
+    expect(purchaseRequests[0]).not.toHaveProperty('reservationId');
+    expect(purchaseRequests[0]).not.toHaveProperty('amount');
   });
 
   it.each([

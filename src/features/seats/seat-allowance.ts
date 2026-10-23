@@ -1,3 +1,5 @@
+import { joinSeatLabels } from '@/shared/lib/join-labels';
+
 interface HeldSeat {
   eventId: string;
 }
@@ -21,8 +23,4 @@ export function totalPrice(price: number, seatCount: number): number {
   return (Math.round(price * 100) * seatCount) / 100;
 }
 
-/** "A3", "A3 and A4", "A3, A4 and A5". */
-export function joinLabels(labels: readonly string[]): string {
-  if (labels.length <= 1) return labels.join('');
-  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
-}
+export const joinLabels = joinSeatLabels;

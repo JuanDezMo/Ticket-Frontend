@@ -17,15 +17,15 @@ import {
   getPurchaseAction,
   type PurchaseAction,
 } from '../purchase-errors';
-import { CARD_BRAND_VALUES, type CardPayload, type IssuedTicket } from '../types';
+import { CARD_BRAND_VALUES, type CardPayload, type PurchaseResult } from '../types';
 
 interface CardFormProps {
   amount: number;
   isPaying: boolean;
   // La cuenta regresiva llegó a cero: no se puede pagar
   locked: boolean;
-  pay: (card: CardPayload) => Promise<IssuedTicket | undefined>;
-  onPaid: (ticket: IssuedTicket) => void;
+  pay: (card: CardPayload) => Promise<PurchaseResult | undefined>;
+  onPaid: (result: PurchaseResult) => void;
   // La reserva ya no se puede pagar: la página reemplaza el formulario por su vista
   onEnded: (action: PurchaseAction) => void;
 }
@@ -55,8 +55,8 @@ export function CardForm({ amount, isPaying, locked, pay, onPaid, onEnded }: Car
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      const ticket = await pay(toCardPayload(values));
-      if (ticket) onPaid(ticket);
+      const result = await pay(toCardPayload(values));
+      if (result) onPaid(result);
     } catch (error) {
       const action = getPurchaseAction(error);
       if (action === PURCHASE_ACTIONS.FIELD_ERROR) {

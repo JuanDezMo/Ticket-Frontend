@@ -57,6 +57,62 @@ describe('HoldBanner', () => {
     await waitFor(() => expect(banner).toHaveTextContent('Seat C8 is held'));
   });
 
+  it('links to the checkout of the reservations of the same event', async () => {
+    signInAs('USER');
+    const eventId = crypto.randomUUID();
+    const first = makeReservation({ eventId, seat: 'C7', expiresAt: minutesFromNow(3.5) });
+    const second = makeReservation({ eventId, seat: 'C8', expiresAt: minutesFromNow(3.6) });
+    setReservations([first, second]);
+    useHoldStore.getState().add([second, first]);
+    renderRoute('/');
+
+    await screen.findByRole('region', { name: 'Reservation in progress' });
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Continue to checkout' })).toHaveAttribute(
+        'href',
+        ROUTES.checkoutFor([first.id, second.id]),
+      ),
+    );
+  });
+
+  it('links only to the event of the reservation that expires first', async () => {
+    signInAs('USER');
+    const sooner = makeReservation({ seat: 'C7', expiresAt: minutesFromNow(3.5) });
+    const otherEvent = crypto.randomUUID();
+    const later = [
+      makeReservation({ eventId: otherEvent, seat: 'A1', expiresAt: minutesFromNow(8) }),
+      makeReservation({ eventId: otherEvent, seat: 'A2', expiresAt: minutesFromNow(8) }),
+    ];
+    setReservations([sooner, ...later]);
+    useHoldStore.getState().add([sooner, ...later]);
+    renderRoute('/');
+
+    await screen.findByRole('region', { name: 'Reservation in progress' });
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Continue to checkout' })).toHaveAttribute(
+        'href',
+        ROUTES.checkout(sooner.id),
+      ),
+    );
+  });
+
+  it('does not show on the checkout of a group that includes that reservation', async () => {
+    signInAs('USER');
+    const eventId = crypto.randomUUID();
+    const a = makeReservation({ eventId, seat: 'C7' });
+    const b = makeReservation({ eventId, seat: 'C8' });
+    setReservations([a, b]);
+    useHoldStore.getState().add([a, b]);
+    renderRoute(ROUTES.checkoutFor([a.id, b.id]), [
+      { path: ROUTES.checkoutGroup, element: <p>Checkout page</p> },
+    ]);
+
+    expect(await screen.findByText('Checkout page')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Reservation in progress' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('does not show on the checkout of that reservation', async () => {
     signInAs('USER');
     const reservation = seedHold();

@@ -24,11 +24,12 @@ export interface CardPayload {
 }
 
 export interface PurchaseRequest {
-  reservationId: string;
+  // De 1 a 8 reservas del mismo evento; el monto lo calcula el servidor
+  reservationIds: string[];
   card: CardPayload;
 }
 
-// Respuesta de POST /tickets/purchase (201 al emitir, 200 si ya existía)
+// Un ticket de la respuesta de POST /tickets/purchase
 export interface IssuedTicket {
   id: string;
   reservationId: string;
@@ -38,6 +39,13 @@ export interface IssuedTicket {
   amount: number;
   transactionId: string;
   issuedAt: string;
+}
+
+// Respuesta de POST /tickets/purchase: siempre 201, un ticket por reserva en el orden pedido
+export interface PurchaseResult {
+  orderId: string;
+  amount: number;
+  tickets: IssuedTicket[];
 }
 
 export interface TicketEvent {

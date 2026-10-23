@@ -12,7 +12,10 @@ import { renderRoute, signInAs } from '@/test/render';
 import { http, HttpResponse } from 'msw';
 import { useSeatSelectionStore } from './store';
 
-const checkoutStub = [{ path: ROUTES.checkoutPattern, element: <p>Checkout page</p> }];
+const checkoutStub = [
+  { path: ROUTES.checkoutPattern, element: <p>Checkout page</p> },
+  { path: ROUTES.checkoutGroup, element: <p>Checkout page</p> },
+];
 
 function seed(statusByLabel = {}, maxSeatsPerUser = 4) {
   const event = makeEvent({ name: 'Rock Night', price: 49.99, capacity: 30, maxSeatsPerUser });
@@ -50,7 +53,7 @@ describe('reserving seats', () => {
     expect(reserveRequests).toEqual([{ eventId: event.id, seats: ['C7'] }]);
   });
 
-  it('reserves several seats in one request and opens the checkout of the first', async () => {
+  it('reserves several seats in one request and opens the checkout of the group', async () => {
     const event = seed();
     const { user, router } = renderRoute(`/events/${event.id}`, checkoutStub);
     await selectSeats(user, 'C7', 'C8');
@@ -60,7 +63,9 @@ describe('reserving seats', () => {
     expect(await screen.findByText('Checkout page')).toBeInTheDocument();
     expect(reserveRequests).toEqual([{ eventId: event.id, seats: ['C7', 'C8'] }]);
     expect(holds().map((hold) => hold.seatLabel)).toEqual(['C7', 'C8']);
-    expect(router.state.location.pathname).toBe(ROUTES.checkout(holds()[0]?.reservationId ?? ''));
+    expect(router.state.location.pathname + router.state.location.search).toBe(
+      ROUTES.checkoutFor(holds().map((hold) => hold.reservationId)),
+    );
     expect(selected()).toEqual([]);
   });
 
@@ -287,7 +292,7 @@ describe('the seat limit of the event', () => {
 
   it('disables Reserve and links to the checkout when the user holds the maximum', async () => {
     const event = seed({ C7: 'RESERVED', C8: 'RESERVED' }, 2);
-    const [first] = holdSeats(event.id, 'C7', 'C8');
+    const held = holdSeats(event.id, 'C7', 'C8');
     const { user } = renderRoute(`/events/${event.id}`);
     await screen.findByRole('button', { name: 'Seat B2, Available' });
 
@@ -303,7 +308,7 @@ describe('the seat limit of the event', () => {
     ).toBeInTheDocument();
     expect(pass.getByRole('link', { name: 'Continue to checkout' })).toHaveAttribute(
       'href',
-      ROUTES.checkout(first?.id ?? ''),
+      ROUTES.checkoutFor(held.map((reservation) => reservation.id)),
     );
     expect(selected()).toEqual([]);
   });

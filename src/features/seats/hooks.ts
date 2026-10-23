@@ -62,7 +62,7 @@ function seatLimitMessage(max: number): string {
 
 /**
  * Reserva los seats elegidos en una sola solicitud. Con éxito limpia la selección, actualiza el
- * mapa y lleva al checkout de la primera reserva; con un error avisa y actualiza lo que cambió.
+ * mapa y lleva al checkout de las reservas creadas; con un error avisa y actualiza lo que cambió.
  */
 export function useReserveSelection(
   eventId: string,
@@ -87,8 +87,7 @@ export function useReserveSelection(
         onSuccess: (reservations) => {
           clear();
           void refreshSeats();
-          const [first] = reservations;
-          if (first) navigate(ROUTES.checkout(first.id));
+          navigate(ROUTES.checkoutFor(reservations.map((reservation) => reservation.id)));
         },
         onError: (error) => {
           const code = error instanceof ApiError ? error.code : null;
