@@ -1,12 +1,14 @@
 import type { RouteObject } from 'react-router';
 import { LoginPage, RegisterPage } from '@/features/auth';
 import { EventDetailPage, EventsPage } from '@/features/events';
+import { CheckoutPage, MyTicketsPage } from '@/features/tickets';
 import { ROUTES } from '@/shared/config/routes';
 import { GuestOnly } from '@/shared/session/GuestOnly';
 import { RequireRole } from '@/shared/session/RequireRole';
 import { ROLES } from '@/shared/session/roles';
 import { AppLayout } from './AppLayout';
-import { AdminPage, MyTicketsPage, NotFoundPage, RouteErrorPage } from './pages';
+import { AdminPage, CreateEventPage, CreateUserPage } from './admin-pages';
+import { NotFoundPage, RouteErrorPage } from './pages';
 
 // Cada ruta declara su acceso: pública, GuestOnly o RequireRole
 export const routes: RouteObject[] = [
@@ -36,6 +38,14 @@ export const routes: RouteObject[] = [
             ),
           },
           {
+            path: ROUTES.checkoutPattern,
+            element: (
+              <RequireRole roles={[ROLES.USER]}>
+                <CheckoutPage />
+              </RequireRole>
+            ),
+          },
+          {
             path: ROUTES.myTickets,
             element: (
               <RequireRole roles={[ROLES.USER]}>
@@ -48,6 +58,22 @@ export const routes: RouteObject[] = [
             element: (
               <RequireRole roles={[ROLES.ADMIN]}>
                 <AdminPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: ROUTES.adminNewEvent,
+            element: (
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <CreateEventPage />
+              </RequireRole>
+            ),
+          },
+          {
+            path: ROUTES.adminNewUser,
+            element: (
+              <RequireRole roles={[ROLES.ADMIN]}>
+                <CreateUserPage />
               </RequireRole>
             ),
           },

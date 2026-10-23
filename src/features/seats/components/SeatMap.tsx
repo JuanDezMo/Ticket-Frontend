@@ -1,12 +1,17 @@
 import { RefreshCwIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useHold } from '@/features/reservations';
 import { getErrorMessage } from '@/shared/api/error-messages';
+import { ROUTES } from '@/shared/config/routes';
 import { useSessionStore } from '@/shared/session/session.store';
 import { Button } from '@/shared/ui/button';
+import { Laminate } from '@/shared/ui/laminate';
+import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { canSelectSeat, canSelectSeats } from '../can-select-seat';
-import { useEventSeats, useSelectedSeat } from '../hooks';
+import { useEventSeats, useReserveSelection, useSelectedSeat } from '../hooks';
 import { isNavigationKey, nextSeat } from '../seat-navigation';
+import { ROW_GRID } from '../seat-grid';
 import { groupSeatsByRow } from '../seat-rows';
 import { useSeatSelectionStore } from '../store';
 import { SEAT_STATUSES } from '../types';
@@ -21,18 +26,27 @@ interface SeatMapProps {
   price: number;
   // Evento impreso en el pase: "Rock Night · Nov 10, 2026, 3:00 PM"
   eventLine: string;
+  // La API dijo que el evento ya no admite reservas: quien lo muestra debe actualizarlo
+  onEventNotActive: () => void;
 }
 
-// Letra de la fila + 10 columnas fijas: el número N siempre cae en la misma columna
-const ROW_GRID =
-  'grid grid-cols-[1.75rem_repeat(10,2.75rem)] gap-1.5 sm:grid-cols-[1.75rem_repeat(10,2.5rem)]';
+// Con más filas que estas, el mapa ofrece "Jump to row"
+const JUMP_TO_ROW_MIN_ROWS = 8;
 
-export function SeatMap({ eventId, eventBookable, price, eventLine }: SeatMapProps) {
+export function SeatMap({
+  eventId,
+  eventBookable,
+  price,
+  eventLine,
+  onEventNotActive,
+}: SeatMapProps) {
   const role = useSessionStore((state) => state.role);
   const seatsQuery = useEventSeats(eventId);
   const seats = seatsQuery.data?.data;
   const { selectedLabel, lostSeatLabel } = useSelectedSeat(eventId, seats);
   const toggle = useSeatSelectionStore((state) => state.toggle);
+  const hold = useHold();
+  const { reserve, reserving } = useReserveSelection(eventId, onEventNotActive);
   const [focusedLabel, setFocusedLabel] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -65,17 +79,33 @@ export function SeatMap({ eventId, eventBookable, price, eventLine }: SeatMapPro
 
   if (seatsQuery.error || !seats) {
     return (
-      <div className="flex flex-col items-start gap-2">
-        <p role="alert">{getErrorMessage(seatsQuery.error)}</p>
+      <Laminate className="flex flex-col items-start gap-3 p-4 sm:max-w-md">
+        <p role="alert" className="font-semibold">
+          {getErrorMessage(seatsQuery.error)}
+        </p>
         <Button variant="outline" onClick={() => void seatsQuery.refetch()}>
           Try again
         </Button>
-      </div>
+      </Laminate>
     );
   }
 
   const available = seats.filter((seat) => seat.status === SEAT_STATUSES.AVAILABLE).length;
   const showPass = canSelectSeats(selection);
+  const rows = groupSeatsByRow(seats);
+
+  // Lleva la fila elegida a la vista y el foco a su primer seat disponible
+  const jumpToRow = (row: string) => {
+    const group = gridRef.current?.querySelector<HTMLElement>(`[data-row="${row}"]`);
+    group?.scrollIntoView({ block: 'center' });
+    const first = rows
+      .find((candidate) => candidate.row === row)
+      ?.seats.find((seat) => canSelectSeat(seat, selection));
+    if (first) {
+      setFocusedLabel(first.label);
+      focusSeat(first.label);
+    }
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!isNavigationKey(event.key) || !tabLabel) return;
@@ -88,38 +118,71 @@ export function SeatMap({ eventId, eventBookable, price, eventLine }: SeatMapPro
   return (
     <section
       aria-label="Seat map"
-      className={showPass ? 'pb-56 lg:grid lg:grid-cols-[1fr_20rem] lg:gap-8 lg:pb-0' : undefined}
+      className={showPass ? 'pb-28 lg:grid lg:grid-cols-[1fr_20rem] lg:gap-8 lg:pb-0' : undefined}
     >
       <div className="flex min-w-0 flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="display text-code-md">Seats</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-sm">
-              {available} of {seats.length} seats available
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void seatsQuery.refetch()}
-              disabled={seatsQuery.isFetching}
-            >
-              <RefreshCwIcon aria-hidden="true" />
-              Refresh
-            </Button>
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="display text-code-md">Seats</h2>
+            <div className="flex items-center gap-3">
+              <span className="text-sm">
+                {available} of {seats.length} seats available
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => void seatsQuery.refetch()}
+                disabled={seatsQuery.isFetching}
+              >
+                <RefreshCwIcon aria-hidden="true" />
+                Refresh
+              </Button>
+            </div>
           </div>
+          {/* La regla de la reserva se dice antes de elegir (principio 1 del producto) */}
+          <p className="text-muted-foreground text-sm">
+            Pick a seat. Once reserved, it is held for 10 minutes while you pay.
+          </p>
         </div>
-        <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-          <div ref={gridRef} onKeyDown={handleKeyDown} className="flex w-max flex-col gap-1.5">
+        <SeatLegend />
+        {rows.length > JUMP_TO_ROW_MIN_ROWS && (
+          <div className="flex items-center gap-2 text-sm">
+            <label htmlFor="jump-to-row">Jump to row</label>
+            <NativeSelect
+              id="jump-to-row"
+              value=""
+              onChange={(event) => event.target.value && jumpToRow(event.target.value)}
+            >
+              <NativeSelectOption value="">Choose</NativeSelectOption>
+              {rows.map(({ row }) => (
+                <NativeSelectOption key={row} value={row}>
+                  {row}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+        )}
+        <div className="overflow-x-auto pb-2">
+          <div
+            ref={gridRef}
+            onKeyDown={handleKeyDown}
+            className="flex w-full flex-col gap-0.5 sm:w-max sm:gap-1.5"
+          >
             <div className={ROW_GRID}>
               <div className="display text-code-sm text-muted-foreground bg-muted col-start-2 col-end-12 grid h-7 place-items-center rounded-t-sm rounded-b-2xl border">
                 Stage
               </div>
             </div>
-            {groupSeatsByRow(seats).map(({ row, seats: rowSeats }) => (
-              <div key={row} role="group" aria-label={`Row ${row}`} className={ROW_GRID}>
+            {rows.map(({ row, seats: rowSeats }) => (
+              <div
+                key={row}
+                role="group"
+                aria-label={`Row ${row}`}
+                data-row={row}
+                className={ROW_GRID}
+              >
                 <span
                   aria-hidden="true"
-                  className="display text-code-sm text-muted-foreground bg-background sticky left-0 z-10 col-start-1 grid place-items-center"
+                  className="display text-code-sm text-muted-foreground col-start-1 grid place-items-center"
                 >
                   {row}
                 </span>
@@ -138,7 +201,6 @@ export function SeatMap({ eventId, eventBookable, price, eventLine }: SeatMapPro
             ))}
           </div>
         </div>
-        <SeatLegend />
       </div>
       {showPass && (
         <div className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:sticky lg:top-24 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
@@ -147,6 +209,13 @@ export function SeatMap({ eventId, eventBookable, price, eventLine }: SeatMapPro
             lostSeatLabel={lostSeatLabel}
             price={price}
             eventLine={eventLine}
+            reserving={reserving}
+            onReserve={() => selectedLabel && reserve(selectedLabel)}
+            hold={
+              hold
+                ? { seatLabel: hold.seatLabel, checkoutPath: ROUTES.checkout(hold.reservationId) }
+                : null
+            }
           />
         </div>
       )}

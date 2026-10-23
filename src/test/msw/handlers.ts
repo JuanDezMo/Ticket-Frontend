@@ -1,7 +1,9 @@
 import { http, HttpResponse } from 'msw';
 import { makeTestToken } from '../jwt';
+import { adminHandlers } from './admin-handlers';
 import { eventHandlers } from './event-handlers';
 import { apiPath, errorBody } from './handlers-shared';
+import { purchaseHandlers } from './purchase-handlers';
 
 export { apiPath, errorBody };
 
@@ -15,6 +17,8 @@ export const TAKEN_EMAIL = 'taken@mail.com';
 // Respuestas por defecto; cada prueba puede cambiarlas con server.use(...)
 export const handlers = [
   ...eventHandlers,
+  ...purchaseHandlers,
+  ...adminHandlers,
   http.post(apiPath('/auth/login'), async ({ request }) => {
     const { email, password } = (await request.json()) as { email: string; password: string };
     const user = Object.values(TEST_USERS).find(

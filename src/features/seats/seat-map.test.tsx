@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import { setMedia } from '@/test/media';
 import { makeEvent, makeSeats } from '@/test/fixtures/events';
 import { setEvents, setSeats } from '@/test/msw/event-handlers';
 import { renderRoute, signInAs } from '@/test/render';
@@ -125,17 +126,18 @@ describe('SelectionPass', () => {
     expect(screen.queryByRole('button', { name: 'Reserve' })).not.toBeInTheDocument();
   });
 
-  it('prints the seat and the price, with Reserve disabled for now', async () => {
+  it('prints the seat and the price, with Reserve enabled', async () => {
     signInAs('USER');
     const event = seed();
     const { user } = renderRoute(`/events/${event.id}`);
 
     await user.click(await screen.findByRole('button', { name: 'Seat C3, Available' }));
 
-    expect(screen.getByText('C3', { selector: '.display' })).toBeInTheDocument();
-    expect(screen.getByText('$49.99', { selector: '.display' })).toBeInTheDocument();
     const reserve = screen.getByRole('button', { name: 'Reserve' });
-    expect(reserve).toBeDisabled();
+    const pass = within(reserve.closest<HTMLElement>('[data-slot="laminate"]')!);
+    expect(pass.getByText('C3')).toBeInTheDocument();
+    expect(pass.getByText('$49.99')).toBeInTheDocument();
+    expect(reserve).toBeEnabled();
     expect(reserve).toHaveAccessibleDescription(/Held for 10 minutes once reserved/);
   });
 
@@ -164,5 +166,64 @@ describe('motion', () => {
     await user.click(seat);
     const code = screen.getByText('A2', { selector: '.display' });
     expect(code.className).toContain('motion-reduce:animate-none');
+  });
+});
+
+describe('compact pass on mobile', () => {
+  beforeEach(() => setMedia({ wide: false }));
+  afterEach(() => useSeatSelectionStore.getState().clear());
+
+  it('shows seat, price and Reserve in one row and keeps the rest under Details', async () => {
+    signInAs('USER');
+    const event = seed();
+    const { user } = renderRoute(`/events/${event.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Seat C3, Available' }));
+
+    const reserve = screen.getByRole('button', { name: 'Reserve' });
+    expect(reserve).toBeEnabled();
+    expect(reserve).toHaveAccessibleDescription(/Held for 10 minutes once reserved/);
+    expect(screen.queryByText(/Rock Night · /, { selector: 'p' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Details/ }));
+    expect(
+      screen.getByText(/Rock Night · /, { selector: 'p.text-muted-foreground' }),
+    ).toBeVisible();
+  });
+});
+
+describe('seat map extras', () => {
+  afterEach(() => useSeatSelectionStore.getState().clear());
+
+  it('puts the legend before the stage and explains the hold up front', async () => {
+    signInAs('USER');
+    const event = seed();
+    renderRoute(`/events/${event.id}`);
+
+    const legend = await screen.findByRole('list', { name: 'Legend' });
+    const stage = screen.getByText('Stage');
+    expect(legend.compareDocumentPosition(stage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      screen.getByText('Pick a seat. Once reserved, it is held for 10 minutes while you pay.'),
+    ).toBeInTheDocument();
+  });
+
+  it('offers Jump to row on big events and moves focus to that row', async () => {
+    signInAs('USER');
+    const event = seed(makeSeats(260));
+    const { user } = renderRoute(`/events/${event.id}`);
+
+    await user.selectOptions(await screen.findByLabelText('Jump to row'), 'M');
+
+    expect(document.activeElement).toHaveAccessibleName('Seat M1, Available');
+  });
+
+  it('hides Jump to row on small events', async () => {
+    signInAs('USER');
+    const event = seed();
+    renderRoute(`/events/${event.id}`);
+
+    await screen.findByText(/seats available/);
+    expect(screen.queryByLabelText('Jump to row')).not.toBeInTheDocument();
   });
 });

@@ -25,4 +25,30 @@ describe('getErrorMessage', () => {
   it('returns the generic message for errors that are not ApiError', () => {
     expect(getErrorMessage(new Error('boom'))).toBe(GENERIC_ERROR_MESSAGE);
   });
+
+  it('has a specific message for the payment and reservation codes', () => {
+    const codes = [
+      ERROR_CODES.PAYMENT_REJECTED,
+      ERROR_CODES.CARD_PROBLEM,
+      ERROR_CODES.PAYMENT_GATEWAY_ERROR,
+      ERROR_CODES.PAYMENT_GATEWAY_TIMEOUT,
+      ERROR_CODES.RESERVATION_EXPIRED,
+      ERROR_CODES.EVENT_CANCELLED,
+      ERROR_CODES.RESERVATION_NOT_FOUND,
+      ERROR_CODES.RESERVATION_ALREADY_CANCELLED,
+      ERROR_CODES.RESERVATION_ALREADY_CONFIRMED,
+      ERROR_CODES.SEAT_NOT_AVAILABLE,
+      ERROR_CODES.EVENT_NOT_ACTIVE,
+    ];
+    for (const code of codes) {
+      expect(getErrorMessage(new ApiError(409, code, 'x'))).not.toBe(GENERIC_ERROR_MESSAGE);
+    }
+  });
+
+  it('tells the user that retrying a timed out payment is safe', () => {
+    const error = new ApiError(504, ERROR_CODES.PAYMENT_GATEWAY_TIMEOUT, 'timeout');
+    expect(getErrorMessage(error)).toBe(
+      'Payment service timed out. Please try again. You will not be charged twice',
+    );
+  });
 });

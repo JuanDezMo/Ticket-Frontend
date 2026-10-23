@@ -7,7 +7,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/shared/ui/field';
 import { Input } from '@/shared/ui/input';
 import { useLogin } from '../hooks';
 import { loginSchema, type LoginValues } from '../schemas';
-import { FormServerError } from './FormServerError';
+import { FormServerError } from '@/shared/ui/form-server-error';
 
 interface LoginFormProps {
   defaultEmail?: string;

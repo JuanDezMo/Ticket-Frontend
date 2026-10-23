@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { HoldBanner } from '@/features/reservations';
 import { ROUTES } from '@/shared/config/routes';
 import { ROLES, type Role } from '@/shared/session/roles';
 import { useSessionStore } from '@/shared/session/session.store';
@@ -34,7 +35,7 @@ const NAV_ITEMS: Record<Role | typeof GUEST, NavItem[]> = {
 // 44 px de alto en móvil para el pulgar; el activo se marca con peso y subrayado, no solo color
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
-    'inline-flex min-h-11 items-center px-1.5 whitespace-nowrap underline-offset-8 sm:min-h-9 sm:px-2',
+    'inline-flex min-h-11 items-center px-1 whitespace-nowrap underline-offset-8 sm:min-h-9 sm:px-2',
     isActive
       ? 'font-semibold text-foreground underline decoration-tier decoration-2'
       : 'text-muted-foreground hover:text-foreground',
@@ -56,14 +57,14 @@ export function AppLayout() {
   return (
     <div className="bg-background text-foreground min-h-screen">
       <header className="bg-background/90 sticky top-0 z-20 border-b backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:h-16">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-1 px-3 sm:h-16 sm:gap-2 sm:px-4">
           <Link
             to={ROUTES.home}
             className="display inline-flex min-h-11 items-center text-base sm:text-lg"
           >
             Tickets
           </Link>
-          <nav aria-label="Main" className="flex items-center gap-0.5 text-sm sm:gap-3">
+          <nav aria-label="Main" className="flex items-center text-sm sm:gap-3">
             {NAV_ITEMS[role ?? GUEST].map((item) => (
               <NavLink key={item.to} to={item.to} end className={navLinkClass}>
                 {item.label}
@@ -74,7 +75,7 @@ export function AppLayout() {
                 <span className="text-muted-foreground hidden max-w-48 truncate md:inline">
                   {email}
                 </span>
-                <Button variant="outline" className="px-3" onClick={handleSignOut}>
+                <Button variant="outline" className="px-2 sm:px-3" onClick={handleSignOut}>
                   Sign out
                 </Button>
               </>
@@ -83,6 +84,7 @@ export function AppLayout() {
           </nav>
         </div>
       </header>
+      <HoldBanner />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
         <Outlet />
       </main>

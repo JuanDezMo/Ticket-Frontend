@@ -37,6 +37,6 @@
 ## 7. Revisión y cierre (Impeccable)
 
 - [x] 7.1 Capturar escritorio (1440) y móvil (390) en los dos temas para el listado, el detalle como visitante y el detalle con sesión, en `.impeccable/review/`, y correr `impeccable detect --json` sobre los archivos cambiados. Verificar que las capturas no tienen regiones en blanco y que los hallazgos del detector están corregidos o justificados
-- [ ] 7.2 Revisión final con el agente `impeccable-finish-reviewer` y aplicar su veredicto (como máximo dos rondas). Verificar que el veredicto queda registrado
-- [ ] 7.3 Documentar con `impeccable-documenter` y verificar que existen `DESIGN.md` y `.impeccable/design.json` con variables para los dos temas
-- [ ] 7.4 Correr `pnpm check` y `pnpm build` completos. Volver a correr `/impeccable critique` de eventos y seats y comparar con el 21/40 anterior
+- [x] 7.2 Revisión final con el agente `impeccable-finish-reviewer` y aplicar su veredicto (como máximo dos rondas). Verificar que el veredicto queda registrado
+- [x] 7.3 Documentar con `impeccable-documenter` y verificar que existen `DESIGN.md` y `.impeccable/design.json` con variables para los dos temas
+- [x] 7.4 Correr `pnpm check` y `pnpm build` completos. Volver a correr `/impeccable critique` de eventos y seats y comparar con el 21/40 anterior

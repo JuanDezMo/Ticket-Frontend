@@ -1,0 +1,49 @@
+import { ApiError, ERROR_CODES, isErrorCode, type ErrorCode } from '@/shared/api/api-error';
+
+// Qué hace la pantalla de pago con cada respuesta de la compra
+export const PURCHASE_ACTIONS = {
+  // Pago rechazado: vaciar número y CVV y pedir otra tarjeta
+  CLEAR_CARD: 'CLEAR_CARD',
+  // Error temporal: conservar los datos para reintentar a mano
+  KEEP_FORM: 'KEEP_FORM',
+  // Dato inválido: el mensaje va junto al campo
+  FIELD_ERROR: 'FIELD_ERROR',
+  SHOW_EXPIRED: 'SHOW_EXPIRED',
+  SHOW_CANCELLED: 'SHOW_CANCELLED',
+  SHOW_EVENT_CANCELLED: 'SHOW_EVENT_CANCELLED',
+  SHOW_PAID: 'SHOW_PAID',
+  SHOW_NOT_FOUND: 'SHOW_NOT_FOUND',
+} as const;
+export type PurchaseAction = (typeof PURCHASE_ACTIONS)[keyof typeof PURCHASE_ACTIONS];
+
+// Un código nuevo es una entrada más; sin entrada se usa KEEP_FORM
+export const PURCHASE_ERROR_ACTIONS: Partial<Record<ErrorCode, PurchaseAction>> = {
+  [ERROR_CODES.PAYMENT_REJECTED]: PURCHASE_ACTIONS.CLEAR_CARD,
+  [ERROR_CODES.CARD_PROBLEM]: PURCHASE_ACTIONS.CLEAR_CARD,
+  [ERROR_CODES.PAYMENT_GATEWAY_ERROR]: PURCHASE_ACTIONS.KEEP_FORM,
+  [ERROR_CODES.PAYMENT_GATEWAY_TIMEOUT]: PURCHASE_ACTIONS.KEEP_FORM,
+  [ERROR_CODES.VALIDATION_ERROR]: PURCHASE_ACTIONS.FIELD_ERROR,
+  [ERROR_CODES.CARD_BRAND_REQUIRED]: PURCHASE_ACTIONS.FIELD_ERROR,
+  [ERROR_CODES.CARD_BRAND_NOT_ALLOWED]: PURCHASE_ACTIONS.FIELD_ERROR,
+  [ERROR_CODES.RESERVATION_EXPIRED]: PURCHASE_ACTIONS.SHOW_EXPIRED,
+  [ERROR_CODES.RESERVATION_ALREADY_CANCELLED]: PURCHASE_ACTIONS.SHOW_CANCELLED,
+  [ERROR_CODES.RESERVATION_ALREADY_CONFIRMED]: PURCHASE_ACTIONS.SHOW_PAID,
+  [ERROR_CODES.EVENT_CANCELLED]: PURCHASE_ACTIONS.SHOW_EVENT_CANCELLED,
+  [ERROR_CODES.RESERVATION_NOT_FOUND]: PURCHASE_ACTIONS.SHOW_NOT_FOUND,
+  [ERROR_CODES.FORBIDDEN]: PURCHASE_ACTIONS.SHOW_NOT_FOUND,
+  [ERROR_CODES.NOT_FOUND]: PURCHASE_ACTIONS.SHOW_NOT_FOUND,
+};
+
+// Campo donde se muestra cada error de datos; el resto va como error general
+export const PURCHASE_FIELD_BY_CODE = {
+  [ERROR_CODES.CARD_BRAND_REQUIRED]: 'brand',
+  [ERROR_CODES.CARD_BRAND_NOT_ALLOWED]: 'brand',
+  [ERROR_CODES.VALIDATION_ERROR]: 'number',
+} as const;
+
+export function getPurchaseAction(error: unknown): PurchaseAction {
+  if (error instanceof ApiError && isErrorCode(error.code)) {
+    return PURCHASE_ERROR_ACTIONS[error.code] ?? PURCHASE_ACTIONS.KEEP_FORM;
+  }
+  return PURCHASE_ACTIONS.KEEP_FORM;
+}

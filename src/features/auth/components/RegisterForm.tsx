@@ -7,7 +7,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/shared/ui/field';
 import { Input } from '@/shared/ui/input';
 import { useRegister } from '../hooks';
 import { registerSchema, type RegisterValues } from '../schemas';
-import { FormServerError } from './FormServerError';
+import { FormServerError } from '@/shared/ui/form-server-error';
 
 const FIELD_BY_CODE: Partial<Record<string, Path<RegisterValues>>> = {
   [ERROR_CODES.EMAIL_ALREADY_EXISTS]: 'email',

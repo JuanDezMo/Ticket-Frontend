@@ -1,6 +1,6 @@
 import { EventFilters } from '../components/EventFilters';
 import { EventList } from '../components/EventList';
-import { Pagination } from '../components/Pagination';
+import { Pagination } from '@/shared/ui/pagination';
 import { useEventFilters, useEvents, useRememberListSearch } from '../hooks';
 
 const FIRST_PAGE = 1;

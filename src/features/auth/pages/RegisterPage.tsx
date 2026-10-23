@@ -1,6 +1,7 @@
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { ROUTES } from '@/shared/config/routes';
+import { REDIRECT_PARAM, ROUTES } from '@/shared/config/routes';
+import { getSafeRedirect, loginPathWithRedirect } from '@/shared/lib/redirect';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { RegisterForm } from '../components/RegisterForm';
 
@@ -8,10 +9,14 @@ export const ACCOUNT_CREATED_MESSAGE = 'Account created. Please sign in';
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get(REDIRECT_PARAM);
 
+  // Si venía de otra página (por ejemplo un evento), el login la recuerda para volver
   const handleRegistered = (email: string) => {
     toast.success(ACCOUNT_CREATED_MESSAGE);
-    navigate(ROUTES.login, { state: { email } });
+    const loginPath = redirect ? loginPathWithRedirect(getSafeRedirect(redirect)) : ROUTES.login;
+    navigate(loginPath, { state: { email } });
   };
 
   return (

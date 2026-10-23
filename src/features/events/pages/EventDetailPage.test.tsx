@@ -97,6 +97,55 @@ describe('EventDetailPage', () => {
     });
   });
 
+  describe('header and guest wall', () => {
+    it('shows how many seats are left to a signed-in user', async () => {
+      signInAs('USER');
+      const event = seedEvent({}, makeSeats(25, { A1: 'SOLD', A2: 'SOLD' }));
+      renderRoute(`/events/${event.id}`);
+
+      expect(await screen.findByText('23 left')).toBeInTheDocument();
+    });
+
+    it('explains why a guest must sign in and offers Sign in and Sign up', async () => {
+      const event = seedEvent();
+      renderRoute(`/events/${event.id}`);
+
+      const wall = await screen.findByRole('region', { name: 'Seat map' });
+      expect(within(wall).getByText(/Creating an account is free/)).toBeInTheDocument();
+      expect(within(wall).getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
+      const signUp = within(wall).getByRole('link', { name: 'Sign up' });
+      expect(signUp).toHaveAttribute(
+        'href',
+        `/register?redirect=${encodeURIComponent(`/events/${event.id}`)}`,
+      );
+    });
+
+    it('returns to the event after signing up and signing in', async () => {
+      const event = seedEvent();
+      const { user, router } = renderRoute(`/events/${event.id}`);
+
+      const wall = await screen.findByRole('region', { name: 'Seat map' });
+      await user.click(within(wall).getByRole('link', { name: 'Sign up' }));
+      await user.type(await screen.findByLabelText('Email'), 'new@mail.com');
+      await user.type(screen.getByLabelText('Password'), 'secret123');
+      await user.click(screen.getByRole('button', { name: 'Create account' }));
+
+      // El registro lleva al login recordando el evento
+      await screen.findByRole('button', { name: 'Sign in' });
+      expect(router.state.location.search).toBe(
+        `?redirect=${encodeURIComponent(`/events/${event.id}`)}`,
+      );
+      await user.type(screen.getByLabelText('Password'), 'secret123');
+      // El usuario de prueba del servidor simulado tiene su propio correo
+      await user.clear(screen.getByLabelText('Email'));
+      await user.type(screen.getByLabelText('Email'), 'user@mail.com');
+      await user.click(screen.getByRole('button', { name: 'Sign in' }));
+
+      expect(await screen.findByText(/seats available/)).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/events/${event.id}`);
+    });
+  });
+
   describe('seat map', () => {
     it('shows rows of 10 with the status in the accessible name', async () => {
       signInAs('USER');

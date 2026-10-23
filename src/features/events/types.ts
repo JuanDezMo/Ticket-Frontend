@@ -1,3 +1,5 @@
+import type { PageMeta } from '@/shared/api/page-meta';
+
 export const EVENT_STATUSES = { ACTIVE: 'ACTIVE', CANCELLED: 'CANCELLED' } as const;
 export type EventStatus = (typeof EVENT_STATUSES)[keyof typeof EVENT_STATUSES];
 export const EVENT_STATUS_VALUES = Object.values(EVENT_STATUSES) as [EventStatus, ...EventStatus[]];
@@ -24,13 +26,6 @@ export interface Event {
   endDate: string;
   createdAt: string;
   status: EventStatus;
-}
-
-export interface PageMeta {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
 }
 
 export interface EventPage {

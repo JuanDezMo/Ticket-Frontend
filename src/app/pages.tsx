@@ -5,14 +5,6 @@ import { StatusMessage } from '@/shared/ui/status-message';
 
 // Páginas del marco de la aplicación. Las placeholder se reemplazan en las iteraciones siguientes.
 
-export function MyTicketsPage() {
-  return <StatusMessage title="My tickets" description="Your tickets will appear here soon." />;
-}
-
-export function AdminPage() {
-  return <StatusMessage title="Admin" description="Event and user management is coming soon." />;
-}
-
 export function NotFoundPage() {
   return (
     <StatusMessage

@@ -18,3 +18,8 @@ export function loginPathWithRedirect(redirect: string): string {
   const params = new URLSearchParams({ [REDIRECT_PARAM]: redirect });
   return `${ROUTES.login}?${params.toString()}`;
 }
+
+export function registerPathWithRedirect(redirect: string): string {
+  const params = new URLSearchParams({ [REDIRECT_PARAM]: redirect });
+  return `${ROUTES.register}?${params.toString()}`;
+}

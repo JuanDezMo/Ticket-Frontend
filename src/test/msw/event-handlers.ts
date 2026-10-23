@@ -15,8 +15,20 @@ export function setEvents(list: Event[]) {
   events = list;
 }
 
+export function addEvent(event: Event) {
+  events = [...events, event];
+}
+
 export function setSeats(eventId: string, seats: Seat[]) {
   seatsByEvent.set(eventId, seats);
+}
+
+export function findEvent(id: string): Event | undefined {
+  return events.find((candidate) => candidate.id === id);
+}
+
+export function findSeats(eventId: string): Seat[] | undefined {
+  return seatsByEvent.get(eventId);
 }
 
 export function resetEventData() {

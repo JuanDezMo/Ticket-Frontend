@@ -5,7 +5,6 @@ import { makeEvent } from '@/test/fixtures/events';
 import { EventCard } from './EventCard';
 import { EventFilters } from './EventFilters';
 import { EventList } from './EventList';
-import { Pagination } from './Pagination';
 
 describe('EventCard', () => {
   it('links to the detail and marks cancelled events', () => {
@@ -55,18 +54,6 @@ describe('EventFilters', () => {
     await userEvent.selectOptions(screen.getByLabelText('Type'), 'Concert');
 
     expect(onChange).toHaveBeenCalledWith('type', 'CONCERT');
-  });
-});
-
-describe('Pagination', () => {
-  it('disables Previous on the first page and Next on the last one', () => {
-    const { rerender } = render(<Pagination page={1} totalPages={3} onPageChange={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
-    expect(screen.getByText('Page 1 of 3')).toBeInTheDocument();
-
-    rerender(<Pagination page={3} totalPages={3} onPageChange={() => {}} />);
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 });
 

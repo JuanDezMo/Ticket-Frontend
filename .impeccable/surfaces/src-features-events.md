@@ -1,8 +1,8 @@
 ---
 version: 1
-slug: "src-features-events"
-primary_target: "src/features/events"
-related_targets: ["src/features/seats","src/app/AppLayout.tsx"]
+slug: 'src-features-events'
+primary_target: 'src/features/events'
+related_targets: ['src/features/seats', 'src/app/AppLayout.tsx']
 ---
 
 # Surface brief: events, event detail and seat map

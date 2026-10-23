@@ -21,6 +21,27 @@ Fuente del contrato: `docs/architecture.md` (sección 11) y `docs/business-rules
 
 Implementado en `web-events`: listado (`/`, 12 por página, filtros en la URL), detalle (`/events/:id`) y mapa de seats con selección de un seat (store de Zustand `features/seats/store.ts`). Los montos (`price`, `amount`) se muestran en USD.
 
+Implementado en `web-purchase`:
+
+| Pantalla                                   | Ruta                       | Qué hace                                                                                                                                                                                               |
+| ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pase de selección (`features/seats`)       | `/events/:id`              | "Reserve" envía `POST /reservations`, guarda la reserva en curso (`features/reservations/hold.store.ts`, `sessionStorage`, clave `ticket-hold`) y lleva al checkout                                    |
+| Aviso de reserva (`features/reservations`) | todas, menos el checkout   | Seat, tiempo restante y "Continue to checkout"; valida la reserva con `GET /reservations/:id` y la descarta si no está `ACTIVE`                                                                        |
+| Checkout (`features/tickets`)              | `/checkout/:reservationId` | Resumen, cuenta regresiva, formulario de tarjeta y `POST /tickets/purchase`; una vista por estado de la reserva y por resultado del pago (`purchase-errors.ts`); "Cancel reservation" con confirmación |
+| Mis tickets (`features/tickets`)           | `/my-tickets?page=`        | `GET /tickets/me` paginado de a 12, con "Cancelled by organizer" para `CANCELLED_BY_EVENT`                                                                                                             |
+
+Implementado en `web-admin` (solo ADMIN):
+
+| Pantalla                            | Ruta                | Qué hace                                                                                                                                                                                                           |
+| ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Panel de eventos (`features/admin`) | `/admin?page=`      | `GET /events` paginado de a 12 con activos y cancelados; "Cancel event" (`POST /events/:id/cancel`) con confirmación en los eventos activos que no han terminado; muestra cuántas reservas y tickets se cancelaron |
+| Crear evento                        | `/admin/events/new` | `POST /events` con calendario y hora (las fechas viajan en UTC) y vista previa de seats calculada en el cliente (filas A a Z de 10); al crear lleva al detalle                                                     |
+| Crear usuario                       | `/admin/users/new`  | `POST /users` con email, contraseña de 8 a 128 caracteres y rol sin valor por defecto; `409 EMAIL_ALREADY_EXISTS` junto al email; la contraseña no queda en ninguna caché                                          |
+
+Las pantallas de admin se cargan de forma diferida (`React.lazy`), así que el calendario no pesa en el bundle del comprador.
+
+**Tarjetas de prueba de la pasarela:** `4111111111111111` se aprueba (`201`; repetir la compra de la misma reserva devuelve `200`). Una tarjeta que termina en `0000` se rechaza (`402 PAYMENT_REJECTED`). Una que termina en `9999` da error simulado (`502 PAYMENT_GATEWAY_ERROR`) y, al tercer intento con la misma tarjeta en la misma reserva, `422 CARD_PROBLEM`. Franquicias: `VISA`, `MASTERCARD`, `AMEX`; vencimiento `MM/YY` no vencido; CVV de 3 dígitos. Los datos de la tarjeta nunca se guardan en el navegador ni en la caché de consultas.
+
 ## 2. Errores: del `code` a la acción en la UI
 
 Todas las respuestas de error tienen la forma `{ code, message }`. La UI decide por `code` usando una tabla (`shared/api/error-messages.ts`).

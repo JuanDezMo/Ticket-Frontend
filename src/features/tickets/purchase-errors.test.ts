@@ -1,0 +1,33 @@
+import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
+import { getPurchaseAction, PURCHASE_ACTIONS } from './purchase-errors';
+
+const actionFor = (code: string) => getPurchaseAction(new ApiError(400, code, 'x'));
+
+describe('getPurchaseAction', () => {
+  it.each([
+    [ERROR_CODES.PAYMENT_REJECTED, PURCHASE_ACTIONS.CLEAR_CARD],
+    [ERROR_CODES.CARD_PROBLEM, PURCHASE_ACTIONS.CLEAR_CARD],
+    [ERROR_CODES.PAYMENT_GATEWAY_ERROR, PURCHASE_ACTIONS.KEEP_FORM],
+    [ERROR_CODES.PAYMENT_GATEWAY_TIMEOUT, PURCHASE_ACTIONS.KEEP_FORM],
+    [ERROR_CODES.VALIDATION_ERROR, PURCHASE_ACTIONS.FIELD_ERROR],
+    [ERROR_CODES.CARD_BRAND_REQUIRED, PURCHASE_ACTIONS.FIELD_ERROR],
+    [ERROR_CODES.CARD_BRAND_NOT_ALLOWED, PURCHASE_ACTIONS.FIELD_ERROR],
+    [ERROR_CODES.RESERVATION_EXPIRED, PURCHASE_ACTIONS.SHOW_EXPIRED],
+    [ERROR_CODES.RESERVATION_ALREADY_CANCELLED, PURCHASE_ACTIONS.SHOW_CANCELLED],
+    [ERROR_CODES.RESERVATION_ALREADY_CONFIRMED, PURCHASE_ACTIONS.SHOW_PAID],
+    [ERROR_CODES.EVENT_CANCELLED, PURCHASE_ACTIONS.SHOW_EVENT_CANCELLED],
+    [ERROR_CODES.RESERVATION_NOT_FOUND, PURCHASE_ACTIONS.SHOW_NOT_FOUND],
+    [ERROR_CODES.FORBIDDEN, PURCHASE_ACTIONS.SHOW_NOT_FOUND],
+  ])('maps %s to %s', (code, action) => {
+    expect(actionFor(code)).toBe(action);
+  });
+
+  it('keeps the form for an unknown code', () => {
+    expect(actionFor('SOMETHING_NEW')).toBe(PURCHASE_ACTIONS.KEEP_FORM);
+  });
+
+  it('keeps the form for a network failure or an unknown error', () => {
+    expect(actionFor(ERROR_CODES.NETWORK_ERROR)).toBe(PURCHASE_ACTIONS.KEEP_FORM);
+    expect(getPurchaseAction(new Error('boom'))).toBe(PURCHASE_ACTIONS.KEEP_FORM);
+  });
+});

@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       css: false,
+      // Con más workers el equipo se satura: cada uno levanta un jsdom y el servidor simulado
+      maxWorkers: 2,
     },
   };
 });

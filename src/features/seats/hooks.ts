@@ -1,5 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+import { useReserveSeat } from '@/features/reservations';
+import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
+import { getErrorMessage } from '@/shared/api/error-messages';
+import { ROUTES } from '@/shared/config/routes';
 import { useSessionStore } from '@/shared/session/session.store';
 import { seatsApi } from './api';
 import { seatKeys } from './query-keys';
@@ -40,4 +46,51 @@ export function useSelectedSeat(eventId: string, seats: Seat[] | undefined) {
   }, [noLongerAvailable, releaseUnavailable]);
 
   return { selectedLabel: noLongerAvailable ? null : selectedLabel, lostSeatLabel };
+}
+
+/**
+ * Reserva el seat elegido. Con éxito limpia la selección, actualiza el mapa y lleva al checkout;
+ * con un error avisa y, si el seat o el evento cambiaron, actualiza lo que corresponda.
+ */
+export function useReserveSelection(eventId: string, onEventNotActive: () => void) {
+  const reserve = useReserveSeat();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const clear = useSeatSelectionStore((state) => state.clear);
+  const releaseUnavailable = useSeatSelectionStore((state) => state.releaseUnavailable);
+  // Evita una segunda solicitud antes de que React deshabilite el botón
+  const inFlight = useRef(false);
+
+  const refreshSeats = () => queryClient.invalidateQueries({ queryKey: seatKeys.byEvent(eventId) });
+
+  const submit = (seat: string) => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    reserve.mutate(
+      { eventId, seat },
+      {
+        onSuccess: (reservation) => {
+          clear();
+          void refreshSeats();
+          navigate(ROUTES.checkout(reservation.id));
+        },
+        onError: (error) => {
+          toast.error(getErrorMessage(error));
+          const code = error instanceof ApiError ? error.code : null;
+          if (code === ERROR_CODES.SEAT_NOT_AVAILABLE) {
+            releaseUnavailable();
+            void refreshSeats();
+          } else if (code === ERROR_CODES.EVENT_NOT_ACTIVE) {
+            void refreshSeats();
+            onEventNotActive();
+          }
+        },
+        onSettled: () => {
+          inFlight.current = false;
+        },
+      },
+    );
+  };
+
+  return { reserve: submit, reserving: reserve.isPending };
 }

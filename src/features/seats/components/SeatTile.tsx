@@ -14,7 +14,7 @@ interface SeatTileProps {
 }
 
 const BASE_CLASS =
-  'relative grid size-11 place-items-center rounded-md border-2 text-sm font-semibold tabular-nums transition-colors duration-[90ms] ease-[steps(2,end)] motion-reduce:transition-none sm:size-10';
+  'relative grid aspect-square w-full place-items-center rounded-md border-2 text-xs font-semibold tabular-nums transition-colors duration-[90ms] ease-[steps(2,end)] motion-reduce:transition-none sm:size-10 sm:text-sm';
 
 export function SeatTile({
   seat,
@@ -33,7 +33,11 @@ export function SeatTile({
     <>
       <span className={visual.numberClassName}>{seat.number}</span>
       {Icon && (
-        <Icon aria-hidden="true" className="absolute top-0.5 right-0.5 size-3" strokeWidth={3} />
+        <Icon
+          aria-hidden="true"
+          className="absolute top-px right-px size-2.5 sm:top-0.5 sm:right-0.5 sm:size-3"
+          strokeWidth={3}
+        />
       )}
     </>
   );

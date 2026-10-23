@@ -1,6 +1,6 @@
 import { ArrowLeftIcon } from 'lucide-react';
 import { Link, useParams } from 'react-router';
-import { SeatMap, SignInToSeeSeats } from '@/features/seats';
+import { SeatMap, SeatsLeft, SignInToSeeSeats } from '@/features/seats';
 import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
 import { getErrorMessage } from '@/shared/api/error-messages';
 import { ROUTES } from '@/shared/config/routes';
@@ -56,13 +56,20 @@ export function EventDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       {backLink}
-      <EventDetails event={event} notice={notice} />
+      <EventDetails
+        event={event}
+        notice={notice}
+        seatsLeft={
+          role ? <SeatsLeft eventId={event.id} fallback={`${event.capacity} seats`} /> : undefined
+        }
+      />
       {role ? (
         <SeatMap
           eventId={event.id}
           eventBookable={notice === null}
           price={event.price}
           eventLine={`${event.name} · ${formatDateTime(event.startDate)}`}
+          onEventNotActive={() => void eventQuery.refetch()}
         />
       ) : (
         <SignInToSeeSeats returnTo={ROUTES.eventDetail(event.id)} />
