@@ -26,13 +26,14 @@ async function pickDay(user: User, label: 'Start' | 'End', day: number, time: st
   fireEvent.change(screen.getByLabelText(`${label} time`), { target: { value: time } });
 }
 
-async function fillEvent(user: User, capacity = '25') {
+async function fillEvent(user: User, capacity = '25', maxSeats = '4') {
   await user.type(await screen.findByLabelText('Name'), '  Rock Night ');
   await user.type(screen.getByLabelText('Description'), 'Live music');
   await user.selectOptions(screen.getByLabelText('Type'), 'Concert');
   await user.type(screen.getByLabelText('Venue'), 'Main Hall');
   await user.type(screen.getByLabelText('Price (USD)'), '49.99');
   await user.type(screen.getByLabelText('Capacity'), capacity);
+  await user.type(screen.getByLabelText('Max seats per buyer'), maxSeats);
   await pickDay(user, 'Start', 15, '20:00');
   await pickDay(user, 'End', 15, '23:00');
 }
@@ -57,6 +58,55 @@ describe('CreateEventPage', () => {
     expect(screen.getByText('Capacity must be a whole number from 1 to 260')).toBeInTheDocument();
     expect(screen.getByText('Choose a start date')).toBeInTheDocument();
     expect(createEventRequests).toHaveLength(0);
+  });
+
+  it('asks for the max seats per buyer empty, with a note that it is final', async () => {
+    renderRoute(ROUTES.adminNewEvent);
+    const field = await screen.findByLabelText('Max seats per buyer');
+    expect(field).toHaveValue('');
+    expect(screen.getByText(/cannot be changed later/)).toBeInTheDocument();
+  });
+
+  it('requires the max seats per buyer', async () => {
+    const { user } = renderRoute(ROUTES.adminNewEvent);
+    await user.type(await screen.findByLabelText('Capacity'), '25');
+    await user.click(submit());
+
+    expect(await screen.findByText('Max seats per buyer is required')).toBeInTheDocument();
+    expect(createEventRequests).toHaveLength(0);
+  });
+
+  it.each(['0', '9'])('rejects %s as the max seats per buyer', async (value) => {
+    const { user } = renderRoute(ROUTES.adminNewEvent);
+    await user.type(await screen.findByLabelText('Capacity'), '25');
+    await user.type(screen.getByLabelText('Max seats per buyer'), value);
+    await user.click(submit());
+
+    expect(
+      await screen.findByText('Max seats per buyer must be a whole number from 1 to 8'),
+    ).toBeInTheDocument();
+    expect(createEventRequests).toHaveLength(0);
+  });
+
+  it('rejects a max seats per buyer above the capacity', async () => {
+    const { user } = renderRoute(ROUTES.adminNewEvent);
+    await user.type(await screen.findByLabelText('Capacity'), '4');
+    await user.type(screen.getByLabelText('Max seats per buyer'), '5');
+    await user.click(submit());
+
+    expect(
+      await screen.findByText('Max seats per buyer cannot exceed the capacity'),
+    ).toBeInTheDocument();
+    expect(createEventRequests).toHaveLength(0);
+  });
+
+  it.each(['1', '8'])('sends %s as the max seats per buyer', async (value) => {
+    const { user } = renderRoute(ROUTES.adminNewEvent);
+    await fillEvent(user, '25', value);
+    await user.click(submit());
+
+    await waitFor(() => expect(createEventRequests).toHaveLength(1));
+    expect(createEventRequests[0]?.maxSeatsPerUser).toBe(Number(value));
   });
 
   it('shows the seat preview while the capacity is typed', async () => {
@@ -105,6 +155,7 @@ describe('CreateEventPage', () => {
       venue: 'Main Hall',
       price: 49.99,
       capacity: 25,
+      maxSeatsPerUser: 4,
     });
     expect(request?.startDate).toMatch(/Z$/);
     expect(new Date(request?.endDate ?? '').getTime()).toBeGreaterThan(

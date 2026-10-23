@@ -27,6 +27,7 @@ const newEvent: CreateEventRequest = {
   venue: 'Main Hall',
   price: 49.99,
   capacity: 25,
+  maxSeatsPerUser: 4,
   startDate: '2030-01-01T20:00:00.000Z',
   endDate: '2030-01-01T23:00:00.000Z',
 };

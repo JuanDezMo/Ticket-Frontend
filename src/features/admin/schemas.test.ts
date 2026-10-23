@@ -10,6 +10,7 @@ const valid = {
   venue: 'Main Hall',
   price: '49.99',
   capacity: '25',
+  maxSeatsPerUser: '4',
   startDate: inHours(48),
   endDate: inHours(51),
 };
@@ -70,6 +71,40 @@ describe('eventFormSchema', () => {
   });
 });
 
+describe('eventFormSchema max seats per buyer', () => {
+  it.each(['1', '8'])('accepts the limit "%s"', (maxSeatsPerUser) => {
+    expect(errorsFor({ maxSeatsPerUser }).maxSeatsPerUser).toBeUndefined();
+  });
+
+  it.each(['0', '9', '2.5', 'abc', '-1'])('rejects the limit "%s"', (maxSeatsPerUser) => {
+    expect(errorsFor({ maxSeatsPerUser }).maxSeatsPerUser).toBe(
+      'Max seats per buyer must be a whole number from 1 to 8',
+    );
+  });
+
+  it('requires a value', () => {
+    expect(errorsFor({ maxSeatsPerUser: '' }).maxSeatsPerUser).toBe(
+      'Max seats per buyer is required',
+    );
+    expect(errorsFor({ maxSeatsPerUser: '  ' }).maxSeatsPerUser).toBe(
+      'Max seats per buyer is required',
+    );
+  });
+
+  it('cannot exceed the capacity', () => {
+    const message = 'Max seats per buyer cannot exceed the capacity';
+    expect(errorsFor({ capacity: '4', maxSeatsPerUser: '5' }).maxSeatsPerUser).toBe(message);
+    expect(errorsFor({ capacity: '4', maxSeatsPerUser: '4' }).maxSeatsPerUser).toBeUndefined();
+    expect(errorsFor({ capacity: '1', maxSeatsPerUser: '1' }).maxSeatsPerUser).toBeUndefined();
+  });
+
+  it('does not add the capacity error while the capacity itself is invalid', () => {
+    const errors = errorsFor({ capacity: 'abc', maxSeatsPerUser: '5' });
+    expect(errors.capacity).toBeDefined();
+    expect(errors.maxSeatsPerUser).toBeUndefined();
+  });
+});
+
 describe('toCreateEventRequest', () => {
   it('converts numbers, trims text and sends the dates in UTC', () => {
     const values = eventFormSchema.parse(valid);
@@ -82,6 +117,7 @@ describe('toCreateEventRequest', () => {
       venue: 'Main Hall',
       price: 49.99,
       capacity: 25,
+      maxSeatsPerUser: 4,
       startDate: valid.startDate.toISOString(),
       endDate: valid.endDate.toISOString(),
     });

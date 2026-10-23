@@ -98,6 +98,24 @@ describe('EventDetailPage', () => {
   });
 
   describe('header and guest wall', () => {
+    it.each([
+      [4, 'Up to 4 seats per buyer'],
+      [8, 'Up to 8 seats per buyer'],
+    ])('shows the per-buyer limit %i to a guest', async (maxSeatsPerUser, text) => {
+      const event = seedEvent({ maxSeatsPerUser });
+      renderRoute(`/events/${event.id}`);
+
+      expect(await screen.findByText(text)).toBeInTheDocument();
+    });
+
+    it('shows no per-buyer limit when it is 1', async () => {
+      const event = seedEvent({ maxSeatsPerUser: 1 });
+      renderRoute(`/events/${event.id}`);
+
+      await screen.findByRole('heading', { name: 'Rock Night' });
+      expect(screen.queryByText(/seats per buyer/)).not.toBeInTheDocument();
+    });
+
     it('shows how many seats are left to a signed-in user', async () => {
       signInAs('USER');
       const event = seedEvent({}, makeSeats(25, { A1: 'SOLD', A2: 'SOLD' }));

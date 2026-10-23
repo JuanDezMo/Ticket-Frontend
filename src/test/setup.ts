@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
+import { toast } from 'sonner';
 import { useHoldStore } from '@/features/reservations/hold.store';
 import { useEventListStore } from '@/features/events/store';
 import { useSessionStore } from '@/shared/session/session.store';
@@ -19,6 +20,7 @@ beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 
 afterEach(() => {
   cleanup();
+  toast.dismiss();
   server.resetHandlers();
   resetEventData();
   resetAdminData();

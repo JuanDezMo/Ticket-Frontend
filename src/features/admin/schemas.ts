@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from '@/features/auth';
-import { EVENT_TYPE_VALUES } from '@/features/events';
+import { EVENT_TYPE_VALUES, MAX_SEATS_PER_BUYER, MIN_SEATS_PER_BUYER } from '@/features/events';
 import { MAX_PREVIEW_CAPACITY, MIN_PREVIEW_CAPACITY } from '@/features/seats';
 import { ROLES } from '@/shared/session/roles';
 import type { CreateEventRequest } from './types';
@@ -15,6 +15,11 @@ const isCapacity = (value: string) => {
     capacity >= MIN_PREVIEW_CAPACITY &&
     capacity <= MAX_PREVIEW_CAPACITY
   );
+};
+
+const isSeatsPerBuyer = (value: string) => {
+  const limit = Number(value);
+  return /^\d+$/.test(value.trim()) && limit >= MIN_SEATS_PER_BUYER && limit <= MAX_SEATS_PER_BUYER;
 };
 
 // Mismas reglas que ticket-api: los mensajes salen en el campo que falla
@@ -32,11 +37,30 @@ export const eventFormSchema = z
         isCapacity,
         `Capacity must be a whole number from ${MIN_PREVIEW_CAPACITY} to ${MAX_PREVIEW_CAPACITY}`,
       ),
+    maxSeatsPerUser: z
+      .string()
+      .refine((value) => value.trim() !== '', 'Max seats per buyer is required')
+      .refine(
+        (value) => value.trim() === '' || isSeatsPerBuyer(value),
+        `Max seats per buyer must be a whole number from ${MIN_SEATS_PER_BUYER} to ${MAX_SEATS_PER_BUYER}`,
+      ),
     startDate: z
       .date({ error: 'Choose a start date' })
       .refine((date) => date.getTime() > Date.now(), 'Start must be in the future'),
     endDate: z.date({ error: 'Choose an end date' }),
   })
+  .refine(
+    (values) =>
+      !isCapacity(values.capacity) ||
+      !isSeatsPerBuyer(values.maxSeatsPerUser) ||
+      Number(values.maxSeatsPerUser) <= Number(values.capacity),
+    {
+      path: ['maxSeatsPerUser'],
+      message: 'Max seats per buyer cannot exceed the capacity',
+      // Debe avisar aunque otros campos (nombre, fechas) todavía tengan errores
+      when: () => true,
+    },
+  )
   .refine((values) => values.endDate.getTime() > values.startDate.getTime(), {
     path: ['endDate'],
     message: 'End must be after start',
@@ -53,6 +77,7 @@ export function toCreateEventRequest(values: EventFormValues): CreateEventReques
     venue: values.venue.trim(),
     price: Number(values.price),
     capacity: Number(values.capacity),
+    maxSeatsPerUser: Number(values.maxSeatsPerUser),
     startDate: values.startDate.toISOString(),
     endDate: values.endDate.toISOString(),
   };

@@ -304,7 +304,7 @@ Cada evento del panel es un Laminate (sin `tier` ni anidar) en una fila: a la iz
 
 ### Admin: formularios y vista previa de seats
 
-Formularios de una columna de `max-w-2xl` (evento) o `max-w-md` (usuario) con los campos de 44 px; los pares de campos cortos (tipo y lugar, precio y capacidad, inicio y fin) pasan a dos columnas desde `sm`. La capacidad lleva una nota ("Seats are generated from this and cannot change later") y, mientras se escribe, la **vista previa de seats** dibuja la rejilla real: la misma de 10 columnas del mapa, con la letra de fila y tiles de seat disponibles, sin foco ni acción, y un resumen "25 seats in 3 rows" en peso 600. La rejilla es `aria-hidden`: el resumen de texto dice lo mismo. El rol de un usuario nuevo no tiene valor por defecto.
+Formularios de una columna de `max-w-2xl` (evento) o `max-w-md` (usuario) con los campos de 44 px; los pares de campos cortos (tipo y lugar, precio y capacidad, inicio y fin) pasan a dos columnas desde `sm`. La capacidad lleva una nota ("Seats are generated from this and cannot change later") y, mientras se escribe, la **vista previa de seats** dibuja la rejilla real: la misma de 10 columnas del mapa, con la letra de fila y tiles de seat disponibles, sin foco ni acción, y un resumen "25 seats in 3 rows" en peso 600. La rejilla es `aria-hidden`: el resumen de texto dice lo mismo. "Max seats per buyer" (1 a 8) acompaña a la capacidad, vacío y con la nota "It cannot be changed later"; la fila del panel lo muestra como "up to N per buyer". El rol de un usuario nuevo no tiene valor por defecto.
 
 ### Campo de fecha y hora
 

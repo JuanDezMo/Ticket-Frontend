@@ -49,6 +49,7 @@ describe('admin flow', () => {
     await admin.user.type(screen.getByLabelText('Venue'), 'Main Hall');
     await admin.user.type(screen.getByLabelText('Price (USD)'), '49.99');
     await admin.user.type(screen.getByLabelText('Capacity'), '25');
+    await admin.user.type(screen.getByLabelText('Max seats per buyer'), '4');
     expect(screen.getByText('25 seats in 3 rows')).toBeInTheDocument();
     await pickDay(admin.user, 'Start', '20:00');
     await pickDay(admin.user, 'End', '23:00');

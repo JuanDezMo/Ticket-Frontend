@@ -22,6 +22,7 @@ export interface Event {
   venue: string;
   price: number;
   capacity: number;
+  maxSeatsPerUser: number;
   startDate: string;
   endDate: string;
   createdAt: string;

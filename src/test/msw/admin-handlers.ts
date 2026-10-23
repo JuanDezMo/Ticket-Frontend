@@ -14,6 +14,7 @@ interface CreateEventBody {
   venue: string;
   price: number;
   capacity: number;
+  maxSeatsPerUser?: number;
   startDate: string;
   endDate: string;
 }
@@ -73,12 +74,24 @@ export const adminHandlers = [
   http.post(apiPath('/events'), async ({ request }) => {
     const body = (await request.json()) as CreateEventBody;
     createEventRequests.push(body);
-    if (!body.name || body.price <= 0 || body.capacity < 1 || body.capacity > 260) {
+    const limit = body.maxSeatsPerUser;
+    if (
+      !body.name ||
+      body.price <= 0 ||
+      body.capacity < 1 ||
+      body.capacity > 260 ||
+      limit === undefined ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 8 ||
+      limit > body.capacity
+    ) {
       return validationError();
     }
     const event: Event = {
       id: crypto.randomUUID(),
       ...body,
+      maxSeatsPerUser: limit,
       createdAt: new Date().toISOString(),
       status: 'ACTIVE',
     };

@@ -30,7 +30,10 @@ export function AdminEventRow({ event }: { event: Event }) {
         </p>
         <p className="text-sm">
           <span className="display text-code-md">{formatMoney(event.price)}</span>
-          <span className="text-muted-foreground"> · {event.capacity} seats</span>
+          <span className="text-muted-foreground">
+            {' '}
+            · {event.capacity} seats · up to {event.maxSeatsPerUser} per buyer
+          </span>
         </p>
       </div>
       {canCancelEvent(event, new Date()) && <CancelEvent event={event} />}

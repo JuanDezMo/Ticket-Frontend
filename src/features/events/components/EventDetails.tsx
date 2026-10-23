@@ -46,6 +46,12 @@ export function EventDetails({ event, notice, seatsLeft }: EventDetailsProps) {
               <dt className="text-muted-foreground">Seats</dt>
               <dd className="font-semibold">{seatsLeft ?? `${event.capacity} seats`}</dd>
             </div>
+            {event.maxSeatsPerUser > 1 && (
+              <div className="contents sm:flex sm:gap-1.5">
+                <dt className="text-muted-foreground">Limit</dt>
+                <dd className="font-semibold">Up to {event.maxSeatsPerUser} seats per buyer</dd>
+              </div>
+            )}
           </dl>
           <p className="text-muted-foreground col-span-2 mt-2 max-w-prose text-sm">
             {event.description}

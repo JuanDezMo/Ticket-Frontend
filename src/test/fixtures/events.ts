@@ -14,6 +14,7 @@ export function daysFromNow(days: number, hours = 0): string {
 
 export function makeEvent(overrides: Partial<Event> = {}): Event {
   sequence += 1;
+  const capacity = overrides.capacity ?? 20;
   return {
     id: crypto.randomUUID(),
     name: `Event ${sequence}`,
@@ -21,7 +22,8 @@ export function makeEvent(overrides: Partial<Event> = {}): Event {
     type: 'CONCERT',
     venue: 'Main Hall',
     price: 150,
-    capacity: 20,
+    capacity,
+    maxSeatsPerUser: Math.min(4, capacity),
     startDate: daysFromNow(30),
     endDate: daysFromNow(30, 3),
     createdAt: daysFromNow(-1),

@@ -14,7 +14,13 @@ describe('AdminPage', () => {
   it('lists active and cancelled events with their data and status', async () => {
     setAdminData({
       events: [
-        makeEvent({ name: 'Rock Night', venue: 'Main Hall', price: 49.99, capacity: 25 }),
+        makeEvent({
+          name: 'Rock Night',
+          venue: 'Main Hall',
+          price: 49.99,
+          capacity: 25,
+          maxSeatsPerUser: 4,
+        }),
         makeEvent({ name: 'Jazz Evening', status: 'CANCELLED', price: 80, capacity: 100 }),
       ],
     });
@@ -28,6 +34,7 @@ describe('AdminPage', () => {
     expect(rock.getByText(/Main Hall/)).toBeInTheDocument();
     expect(rock.getByText('$49.99')).toBeInTheDocument();
     expect(rock.getByText(/25 seats/)).toBeInTheDocument();
+    expect(rock.getByText(/up to 4 per buyer/)).toBeInTheDocument();
     const jazz = within(items[1] as HTMLElement);
     expect(jazz.getByText('Cancelled')).toBeInTheDocument();
     expect(jazz.getByText(/100 seats/)).toBeInTheDocument();

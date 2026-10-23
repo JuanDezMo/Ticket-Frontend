@@ -28,7 +28,14 @@ export function CreateEventForm({ onCreated }: CreateEventFormProps) {
   const { create, isPending } = useCreateEvent();
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: { name: '', description: '', venue: '', price: '', capacity: '' },
+    defaultValues: {
+      name: '',
+      description: '',
+      venue: '',
+      price: '',
+      capacity: '',
+      maxSeatsPerUser: '',
+    },
   });
   const { errors } = form.formState;
   const capacity = parseCapacity(useWatch({ control: form.control, name: 'capacity' }));
@@ -105,6 +112,17 @@ export function CreateEventForm({ onCreated }: CreateEventFormProps) {
               Seats are generated from this and cannot change later.
             </FieldDescription>
             <FieldError errors={[errors.capacity]} />
+          </Field>
+          <Field data-invalid={!!errors.maxSeatsPerUser}>
+            <FieldLabel htmlFor="event-max-seats">Max seats per buyer</FieldLabel>
+            <Input
+              id="event-max-seats"
+              inputMode="numeric"
+              aria-invalid={!!errors.maxSeatsPerUser}
+              {...form.register('maxSeatsPerUser')}
+            />
+            <FieldDescription>From 1 to 8. It cannot be changed later.</FieldDescription>
+            <FieldError errors={[errors.maxSeatsPerUser]} />
           </Field>
         </div>
         <SeatPreview capacity={capacity} />

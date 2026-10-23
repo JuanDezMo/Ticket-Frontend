@@ -9,6 +9,7 @@ export interface CreateEventRequest {
   venue: string;
   price: number;
   capacity: number;
+  maxSeatsPerUser: number;
   startDate: string;
   endDate: string;
 }
