@@ -39,6 +39,7 @@ describe('getErrorMessage', () => {
       ERROR_CODES.RESERVATION_ALREADY_CONFIRMED,
       ERROR_CODES.SEAT_NOT_AVAILABLE,
       ERROR_CODES.SEAT_LIMIT_REACHED,
+      ERROR_CODES.HOLD_LIMIT_REACHED,
       ERROR_CODES.EVENT_NOT_ACTIVE,
     ];
     for (const code of codes) {

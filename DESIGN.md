@@ -272,7 +272,7 @@ Tile `aspect-square w-full` (`size-10` desde `sm`), `rounded-md`, borde de 2 px,
 
 ### Selection pass
 
-Laminate `punched` con código de asiento en `code-lg`, precio en `code-md`, línea de evento, botón Reserve y la regla de reserva (10 tramos `tier` de 6 px, uno por minuto). Con una reserva en curso, Reserve queda deshabilitado y el pase dice "You are holding C7…" con el enlace al checkout. Al elegir un asiento el código se imprime con el sello: `stamp` 180 ms `steps(2,end)`, de escala 1.35 y opacidad 0.4 a normal.
+Laminate `punched` con código de asiento en `code-lg`, precio en `code-md`, línea de evento, botón Reserve y la regla de reserva (10 tramos `tier` de 6 px, uno por minuto). Con varios asientos el código pasa a `code-md` con la lista ("C7, C8"), el precio es el total, el botón dice "Reserve N seats" y una línea "2 of 4 seats selected" cuenta el cupo; en móvil se muestran tres códigos y "+N" (la lista completa va en Details). Si el usuario ya retiene el máximo del evento, Reserve queda deshabilitado y el pase dice "You are holding N seats, the most for this event…" con el enlace al checkout; pulsar un asiento con el cupo lleno no lo elige y el pase lo explica ("You can select up to N seats"). Al elegir un asiento el código se imprime con el sello: `stamp` 180 ms `steps(2,end)`, de escala 1.35 y opacidad 0.4 a normal.
 
 ### Inputs / Fields
 
@@ -288,7 +288,7 @@ Encabezado sticky con fondo `background/90` y desenfoque. Logo en display. Enlac
 
 ### Hold banner (aviso de reserva)
 
-Laminate sin `tier` debajo del encabezado, en todas las páginas menos el checkout de esa reserva. Una fila (se parte en móvil): "Seat C7 is held", el tiempo restante en display `code-md` con la regla de 10 tramos debajo, "left" y el botón "Continue to checkout" a la derecha. La regla se consume en proporción a `createdAt`→`expiresAt` (tramos apagados en `border`, encendidos en `tier`). El texto "mm:ss" es `aria-hidden`; un `role="status"` aparte anuncia en 5 minutos, en 1 minuto y al vencer, nunca cada segundo.
+Laminate sin `tier` debajo del encabezado, en todas las páginas menos el checkout de esa reserva. Una fila (se parte en móvil): "Seat C7 is held" ("3 seats held" con varias reservas; el tiempo y el enlace son los de la que vence primero), el tiempo restante en display `code-md` con la regla de 10 tramos debajo, "left" y el botón "Continue to checkout" a la derecha. La regla se consume en proporción a `createdAt`→`expiresAt` (tramos apagados en `border`, encendidos en `tier`). El texto "mm:ss" es `aria-hidden`; un `role="status"` aparte anuncia en 5 minutos, en 1 minuto y al vencer, nunca cada segundo.
 
 ### Checkout y tarjeta
 

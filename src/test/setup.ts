@@ -28,7 +28,7 @@ afterEach(() => {
   resetMedia();
   useSessionStore.getState().signOut();
   useEventListStore.setState({ lastSearch: '' });
-  useHoldStore.setState({ hold: null });
+  useHoldStore.setState({ holds: [] });
   useThemeStore.setState({ preference: THEME_PREFERENCES.SYSTEM });
   document.documentElement.className = '';
   localStorage.clear();

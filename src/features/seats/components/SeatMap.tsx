@@ -1,6 +1,6 @@
 import { RefreshCwIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { useHold } from '@/features/reservations';
+import { useHolds } from '@/features/reservations';
 import { getErrorMessage } from '@/shared/api/error-messages';
 import { ROUTES } from '@/shared/config/routes';
 import { useSessionStore } from '@/shared/session/session.store';
@@ -9,7 +9,8 @@ import { Laminate } from '@/shared/ui/laminate';
 import { NativeSelect, NativeSelectOption } from '@/shared/ui/native-select';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { canSelectSeat, canSelectSeats } from '../can-select-seat';
-import { useEventSeats, useReserveSelection, useSelectedSeat } from '../hooks';
+import { useEventSeats, useReserveSelection, useSelectedSeats } from '../hooks';
+import { seatAllowance } from '../seat-allowance';
 import { isNavigationKey, nextSeat } from '../seat-navigation';
 import { ROW_GRID } from '../seat-grid';
 import { groupSeatsByRow } from '../seat-rows';
@@ -24,6 +25,8 @@ interface SeatMapProps {
   // false si el evento está cancelado o ya inició: nadie puede elegir seats
   eventBookable: boolean;
   price: number;
+  // Límite de seats por comprador del evento
+  maxSeatsPerUser: number;
   // Evento impreso en el pase: "Rock Night · Nov 10, 2026, 3:00 PM"
   eventLine: string;
   // La API dijo que el evento ya no admite reservas: quien lo muestra debe actualizarlo
@@ -37,17 +40,23 @@ export function SeatMap({
   eventId,
   eventBookable,
   price,
+  maxSeatsPerUser,
   eventLine,
   onEventNotActive,
 }: SeatMapProps) {
   const role = useSessionStore((state) => state.role);
   const seatsQuery = useEventSeats(eventId);
   const seats = seatsQuery.data?.data;
-  const { selectedLabel, lostSeatLabel } = useSelectedSeat(eventId, seats);
+  const { selectedLabels, lostSeatLabels } = useSelectedSeats(eventId, seats);
   const toggle = useSeatSelectionStore((state) => state.toggle);
-  const hold = useHold();
-  const { reserve, reserving } = useReserveSelection(eventId, onEventNotActive);
+  const holds = useHolds();
+  const { reserve, reserving } = useReserveSelection(eventId, maxSeatsPerUser, onEventNotActive);
   const [focusedLabel, setFocusedLabel] = useState<string | null>(null);
+  // Se pulsó un seat con el cupo lleno: el pase lo explica en vez de ignorar el toque
+  const [fullNotice, setFullNotice] = useState(false);
+  const allowance = seatAllowance(maxSeatsPerUser, holds, eventId);
+  const holdsHere = holds.filter((hold) => hold.eventId === eventId);
+  const selectedLabel = selectedLabels[0] ?? null;
   const gridRef = useRef<HTMLDivElement>(null);
 
   const selection = { role, eventBookable };
@@ -67,11 +76,12 @@ export function SeatMap({
   };
 
   // Si el seat se perdió, el foco vuelve al mapa para elegir otro
+  const lostKey = lostSeatLabels.join(',');
   useEffect(() => {
-    if (lostSeatLabel) focusSeat(tabLabel);
+    if (lostKey) focusSeat(tabLabel);
     // Solo reacciona a una pérdida nueva, no a cada cambio de foco
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lostSeatLabel]);
+  }, [lostKey]);
 
   if (seatsQuery.isLoading) {
     return <Skeleton aria-label="Loading seats" className="h-64 rounded-lg" />;
@@ -140,7 +150,9 @@ export function SeatMap({
           </div>
           {/* La regla de la reserva se dice antes de elegir (principio 1 del producto) */}
           <p className="text-muted-foreground text-sm">
-            Pick a seat. Once reserved, it is held for 10 minutes while you pay.
+            {maxSeatsPerUser > 1
+              ? `Pick up to ${maxSeatsPerUser} seats. Once reserved, they are held for 10 minutes while you pay.`
+              : 'Pick a seat. Once reserved, it is held for 10 minutes while you pay.'}
           </p>
         </div>
         <SeatLegend />
@@ -191,9 +203,9 @@ export function SeatMap({
                     key={seat.id}
                     seat={seat}
                     selectable={canSelectSeat(seat, selection)}
-                    selected={seat.label === selectedLabel}
+                    selected={selectedLabels.includes(seat.label)}
                     focusable={seat.label === tabLabel}
-                    onToggle={(label) => toggle(eventId, label)}
+                    onToggle={(label) => setFullNotice(!toggle(eventId, label, allowance))}
                     onFocus={setFocusedLabel}
                   />
                 ))}
@@ -205,15 +217,20 @@ export function SeatMap({
       {showPass && (
         <div className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm lg:sticky lg:top-24 lg:self-start lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
           <SelectionPass
-            selectedLabel={selectedLabel}
-            lostSeatLabel={lostSeatLabel}
+            selectedLabels={selectedLabels}
+            lostSeatLabels={lostSeatLabels}
+            allowance={allowance}
             price={price}
             eventLine={eventLine}
             reserving={reserving}
-            onReserve={() => selectedLabel && reserve(selectedLabel)}
-            hold={
-              hold
-                ? { seatLabel: hold.seatLabel, checkoutPath: ROUTES.checkout(hold.reservationId) }
+            onReserve={() => reserve(selectedLabels)}
+            fullNotice={fullNotice}
+            held={
+              allowance === 0 && holdsHere.length > 0
+                ? {
+                    count: holdsHere.length,
+                    checkoutPath: ROUTES.checkout(holdsHere[0]?.reservationId ?? ''),
+                  }
                 : null
             }
           />

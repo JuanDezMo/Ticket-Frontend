@@ -58,10 +58,10 @@ describe('events flow', () => {
   it('clears the selected seat when the session ends', async () => {
     signInAs('USER');
     renderRoute('/');
-    useSeatSelectionStore.getState().toggle('event-1', 'A1');
+    useSeatSelectionStore.getState().toggle('event-1', 'A1', 4);
 
     useSessionStore.getState().signOut();
 
-    expect(useSeatSelectionStore.getState()).toMatchObject({ eventId: null, seatLabel: null });
+    expect(useSeatSelectionStore.getState()).toMatchObject({ eventId: null, seatLabels: [] });
   });
 });

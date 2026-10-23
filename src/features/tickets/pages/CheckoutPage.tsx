@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router';
-import { clearHold, useReservation } from '@/features/reservations';
+import { removeHold, useReservation } from '@/features/reservations';
 import { seatKeys } from '@/features/seats';
 import { ApiError } from '@/shared/api/api-error';
 import { getErrorMessage } from '@/shared/api/error-messages';
@@ -49,14 +49,14 @@ export function CheckoutPage() {
   if (endedKind) return <EndedView kind={endedKind} eventId={data.eventId} />;
 
   const handlePaid = (ticket: IssuedTicket) => {
-    clearHold();
+    removeHold(reservationId);
     void queryClient.invalidateQueries({ queryKey: seatKeys.byEvent(ticket.eventId) });
     void queryClient.invalidateQueries({ queryKey: ticketKeys.all });
     setIssued(ticket);
   };
 
   const handleEnded = (action: PurchaseAction) => {
-    clearHold();
+    removeHold(reservationId);
     const kind = ENDED_BY_ACTION[action];
     if (kind) setEnded(kind);
   };

@@ -7,6 +7,8 @@ import { apiPath, errorBody } from './handlers-shared';
 // Terminaciones de tarjeta con las que la pasarela simulada responde distinto
 const REJECTED_ENDING = '0000';
 const GATEWAY_ERROR_ENDING = '9999';
+// Tope global de reservas activas por cuenta (MAX_ACTIVE_HOLDS_PER_USER del servidor)
+export const MAX_ACTIVE_HOLDS = 8;
 // Al tercer error con la misma tarjeta y reserva, la pasarela responde 422
 const GATEWAY_ERRORS_BEFORE_CARD_PROBLEM = 2;
 
@@ -16,7 +18,7 @@ const issuedByReservation = new Map<string, IssuedTicket>();
 const gatewayErrors = new Map<string, number>();
 
 // Cuerpos recibidos, para comprobar cuántas solicitudes envió la UI
-export const reserveRequests: { eventId: string; seat: string }[] = [];
+export const reserveRequests: { eventId: string; seats: string[] }[] = [];
 export const purchaseRequests: unknown[] = [];
 
 export function setReservations(list: Reservation[]) {
@@ -82,32 +84,63 @@ const INACTIVE_CODE = {
 
 export const purchaseHandlers = [
   http.post(apiPath('/reservations'), async ({ request }) => {
-    const body = (await request.json()) as { eventId: string; seat: string };
-    reserveRequests.push(body);
+    const body = (await request.json()) as { eventId: string; seats?: unknown; seat?: unknown };
+    const seats = body.seats;
+    // Igual que la API: `seat` ya no existe y la lista va de 1 a 8 sin repetidos
+    if (
+      !Array.isArray(seats) ||
+      seats.length < 1 ||
+      seats.length > 8 ||
+      new Set(seats).size !== seats.length ||
+      'seat' in body
+    ) {
+      return HttpResponse.json(errorBody('VALIDATION_ERROR', 'seats is invalid'), { status: 400 });
+    }
+    const labels = seats as string[];
+    reserveRequests.push({ eventId: body.eventId, seats: labels });
     const event = findEvent(body.eventId);
     if (!event) {
       return HttpResponse.json(errorBody('EVENT_NOT_FOUND', 'Event not found'), { status: 404 });
     }
     if (event.status !== 'ACTIVE') return conflict('EVENT_NOT_ACTIVE');
-    const seat = findSeats(body.eventId)?.find((candidate) => candidate.label === body.seat);
-    if (!seat) {
+    const found = labels.map((label) =>
+      findSeats(body.eventId)?.find((candidate) => candidate.label === label),
+    );
+    if (found.some((seat) => !seat)) {
       return HttpResponse.json(errorBody('SEAT_NOT_FOUND', 'Seat not found'), { status: 404 });
     }
-    if (seat.status !== 'AVAILABLE') return conflict('SEAT_NOT_AVAILABLE');
-    seat.status = 'RESERVED';
+
+    // Primero los límites y después la disponibilidad, como la API
+    const mine = reservations.map(effective);
+    const inEvent = mine.filter(
+      (candidate) =>
+        candidate.eventId === body.eventId &&
+        (candidate.status === 'ACTIVE' || candidate.status === 'CONFIRMED'),
+    ).length;
+    if (inEvent + labels.length > event.maxSeatsPerUser) return conflict('SEAT_LIMIT_REACHED');
+    const active = mine.filter((candidate) => candidate.status === 'ACTIVE').length;
+    if (active + labels.length > MAX_ACTIVE_HOLDS) return conflict('HOLD_LIMIT_REACHED');
+
+    const taken = found.filter((seat) => seat?.status !== 'AVAILABLE');
+    if (taken.length > 0) return conflict('SEAT_NOT_AVAILABLE');
+
     const now = Date.now();
-    const reservation: Reservation = {
-      id: crypto.randomUUID(),
-      eventId: body.eventId,
-      seatId: seat.id,
-      seat: seat.label,
-      status: 'ACTIVE',
-      amount: event.price,
-      createdAt: new Date(now).toISOString(),
-      expiresAt: new Date(now + 10 * 60 * 1000).toISOString(),
-    };
-    reservations.push(reservation);
-    return HttpResponse.json(reservation, { status: 201 });
+    const created = found.map((seat): Reservation => {
+      const reservation: Reservation = {
+        id: crypto.randomUUID(),
+        eventId: body.eventId,
+        seatId: seat!.id,
+        seat: seat!.label,
+        status: 'ACTIVE',
+        amount: event.price,
+        createdAt: new Date(now).toISOString(),
+        expiresAt: new Date(now + 10 * 60 * 1000).toISOString(),
+      };
+      seat!.status = 'RESERVED';
+      return reservation;
+    });
+    reservations.push(...created);
+    return HttpResponse.json({ reservations: created }, { status: 201 });
   }),
 
   http.get(apiPath('/reservations/:id'), ({ params }) => {

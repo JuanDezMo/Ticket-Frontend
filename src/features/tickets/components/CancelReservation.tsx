@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { clearHold, reservationKeys, useCancelReservation } from '@/features/reservations';
+import { removeHold, reservationKeys, useCancelReservation } from '@/features/reservations';
 import { seatKeys } from '@/features/seats';
 import { ApiError, ERROR_CODES } from '@/shared/api/api-error';
 import { getErrorMessage } from '@/shared/api/error-messages';
@@ -35,14 +35,14 @@ export function CancelReservation({ reservationId, eventId, paying }: CancelRese
   const handleConfirm = () =>
     cancel.mutate(reservationId, {
       onSuccess: () => {
-        clearHold();
+        removeHold(reservationId);
         void queryClient.invalidateQueries({ queryKey: seatKeys.byEvent(eventId) });
         toast.success('Reservation cancelled');
         navigate(ROUTES.eventDetail(eventId));
       },
       onError: (error) => {
         if (error instanceof ApiError && error.code === ERROR_CODES.RESERVATION_ALREADY_CONFIRMED) {
-          clearHold();
+          removeHold(reservationId);
           navigate(ROUTES.myTickets);
           return;
         }

@@ -9,7 +9,8 @@ export const RESERVATION_STATUSES = {
 } as const;
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[keyof typeof RESERVATION_STATUSES];
 
-// Formato de POST /reservations, GET /reservations/:id y POST /reservations/:id/cancel
+// Formato de GET /reservations/:id y POST /reservations/:id/cancel,
+// y de cada elemento de POST /reservations
 export interface Reservation {
   id: string;
   eventId: string;
@@ -19,4 +20,9 @@ export interface Reservation {
   amount: number;
   expiresAt: string;
   createdAt: string;
+}
+
+// Respuesta de POST /reservations: una reserva por seat, en el orden pedido
+export interface ReservationBatch {
+  reservations: Reservation[];
 }

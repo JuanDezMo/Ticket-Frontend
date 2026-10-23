@@ -68,6 +68,7 @@ export function EventDetailPage() {
           eventId={event.id}
           eventBookable={notice === null}
           price={event.price}
+          maxSeatsPerUser={event.maxSeatsPerUser}
           eventLine={`${event.name} · ${formatDateTime(event.startDate)}`}
           onEventNotActive={() => void eventQuery.refetch()}
         />

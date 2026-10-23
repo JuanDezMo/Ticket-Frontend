@@ -138,7 +138,7 @@ describe('CheckoutPage payment', () => {
 
   it('issues the ticket, drops the hold and refreshes the seat map', async () => {
     const { event, reservation } = seed();
-    useHoldStore.getState().start(reservation);
+    useHoldStore.getState().add([reservation]);
     const { user, queryClient } = renderRoute(ROUTES.checkout(reservation.id));
     queryClient.setQueryData(seatKeys.byEvent(event.id), { eventId: event.id, data: [] });
 
@@ -150,7 +150,7 @@ describe('CheckoutPage payment', () => {
     expect(await screen.findByText('Rock Night')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View my tickets' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to events' })).toBeInTheDocument();
-    expect(useHoldStore.getState().hold).toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
     expect(queryClient.getQueryState(seatKeys.byEvent(event.id))?.isInvalidated).toBe(true);
     expect(purchaseRequests).toHaveLength(1);
   });
@@ -189,7 +189,7 @@ describe('CheckoutPage payment', () => {
     ['FORBIDDEN', 403, 'Reservation not found'],
   ])('replaces the form after %s and drops the hold', async (code, status, message) => {
     const { reservation } = seed();
-    useHoldStore.getState().start(reservation);
+    useHoldStore.getState().add([reservation]);
     server.use(
       http.post(apiPath('/tickets/purchase'), () => HttpResponse.json(errorBody(code), { status })),
     );
@@ -199,7 +199,7 @@ describe('CheckoutPage payment', () => {
 
     expect(await screen.findByText(message)).toBeInTheDocument();
     expect(screen.queryByLabelText('Card number')).not.toBeInTheDocument();
-    expect(useHoldStore.getState().hold).toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
   });
 
   it('keeps the form after a rejected payment and lets the user try another card', async () => {

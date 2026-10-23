@@ -81,7 +81,7 @@ describe('SeatMap layout', () => {
 
   it('shows a symbol for each state in the legend', async () => {
     signInAs('USER');
-    const event = seed();
+    const event = seed(undefined, { maxSeatsPerUser: 1 });
     renderRoute(`/events/${event.id}`);
 
     const legend = await screen.findByRole('list', { name: 'Legend' });
@@ -107,7 +107,7 @@ describe('SeatMap keyboard', () => {
     expect(document.activeElement).toHaveAccessibleName('Seat B3, Available');
 
     await user.keyboard('{Enter}');
-    expect(useSeatSelectionStore.getState().seatLabel).toBe('B3');
+    expect(useSeatSelectionStore.getState().seatLabels).toEqual(['B3']);
 
     await user.tab();
     expect(document.activeElement?.getAttribute('data-seat-label')).toBeNull();
@@ -197,7 +197,7 @@ describe('seat map extras', () => {
 
   it('puts the legend before the stage and explains the hold up front', async () => {
     signInAs('USER');
-    const event = seed();
+    const event = seed(undefined, { maxSeatsPerUser: 1 });
     renderRoute(`/events/${event.id}`);
 
     const legend = await screen.findByRole('list', { name: 'Legend' });

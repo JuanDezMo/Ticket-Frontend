@@ -212,9 +212,22 @@ describe('EventDetailPage', () => {
   });
 
   describe('seat selection', () => {
-    it('selects, replaces and deselects a seat', async () => {
+    it('selects several seats up to the limit of the event', async () => {
       signInAs('USER');
-      const event = seedEvent();
+      const event = seedEvent({ maxSeatsPerUser: 4 });
+      const { user } = renderRoute(`/events/${event.id}`);
+
+      await user.click(await screen.findByRole('button', { name: 'Seat A7, Available' }));
+      await user.click(screen.getByRole('button', { name: 'Seat A8, Available' }));
+
+      expect(screen.getByText('Selected seats: A7, A8')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Seat A7, Selected' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Seat A8, Selected' })).toBeInTheDocument();
+    });
+
+    it('selects, replaces and deselects a seat when the event allows one', async () => {
+      signInAs('USER');
+      const event = seedEvent({ maxSeatsPerUser: 1 });
       const { user } = renderRoute(`/events/${event.id}`);
 
       await user.click(await screen.findByRole('button', { name: 'Seat A7, Available' }));
@@ -276,7 +289,7 @@ describe('EventDetailPage', () => {
       await user.click(screen.getByRole('button', { name: 'Refresh' }));
 
       expect(await screen.findByText('A3 was just taken. Pick another seat')).toBeInTheDocument();
-      expect(useSeatSelectionStore.getState().seatLabel).toBeNull();
+      expect(useSeatSelectionStore.getState().seatLabels).toEqual([]);
       // El foco vuelve al mapa para elegir otro seat
       await waitFor(() =>
         expect(document.activeElement).toHaveAccessibleName('Seat A1, Available'),

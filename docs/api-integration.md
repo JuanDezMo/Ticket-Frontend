@@ -10,7 +10,7 @@ Fuente del contrato: `docs/architecture.md` (sección 11) y `docs/business-rules
 | Listado de eventos (`page`, `pageSize` 1–20, `status`, `type`, `startFrom`, `startTo`, `search`) | `GET /events`                                      | público      |
 | Detalle de evento (`/events/:id`)                                                                | `GET /events/:id`                                  | público      |
 | Mapa de seats                                                                                    | `GET /events/:id/seats?status=`                    | autenticado  |
-| Reservar seat                                                                                    | `POST /reservations` `{ eventId, seat }`           | USER         |
+| Reservar seat                                                                                    | `POST /reservations` `{ eventId, seats }`          | USER         |
 | Reserva en curso (recarga, cuenta regresiva)                                                     | `GET /reservations/:id`                            | USER (dueño) |
 | Cancelar mi reserva                                                                              | `POST /reservations/:id/cancel`                    | USER (dueño) |
 | Checkout                                                                                         | `POST /tickets/purchase` `{ reservationId, card }` | USER         |
@@ -23,12 +23,12 @@ Implementado en `web-events`: listado (`/`, 12 por página, filtros en la URL), 
 
 Implementado en `web-purchase`:
 
-| Pantalla                                   | Ruta                       | Qué hace                                                                                                                                                                                               |
-| ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pase de selección (`features/seats`)       | `/events/:id`              | "Reserve" envía `POST /reservations`, guarda la reserva en curso (`features/reservations/hold.store.ts`, `sessionStorage`, clave `ticket-hold`) y lleva al checkout                                    |
-| Aviso de reserva (`features/reservations`) | todas, menos el checkout   | Seat, tiempo restante y "Continue to checkout"; valida la reserva con `GET /reservations/:id` y la descarta si no está `ACTIVE`                                                                        |
-| Checkout (`features/tickets`)              | `/checkout/:reservationId` | Resumen, cuenta regresiva, formulario de tarjeta y `POST /tickets/purchase`; una vista por estado de la reserva y por resultado del pago (`purchase-errors.ts`); "Cancel reservation" con confirmación |
-| Mis tickets (`features/tickets`)           | `/my-tickets?page=`        | `GET /tickets/me` paginado de a 12, con "Cancelled by organizer" para `CANCELLED_BY_EVENT`                                                                                                             |
+| Pantalla                                   | Ruta                       | Qué hace                                                                                                                                                                                                                                               |
+| ------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pase de selección (`features/seats`)       | `/events/:id`              | "Reserve" envía una sola `POST /reservations` con la lista de seats (todo o nada), guarda las reservas en curso como lista (`features/reservations/hold.store.ts`, `sessionStorage`, clave `ticket-hold`, versión 2) y lleva al checkout de la primera |
+| Aviso de reserva (`features/reservations`) | todas, menos el checkout   | Seat, tiempo restante y "Continue to checkout"; valida la reserva con `GET /reservations/:id` y la descarta si no está `ACTIVE`                                                                                                                        |
+| Checkout (`features/tickets`)              | `/checkout/:reservationId` | Resumen, cuenta regresiva, formulario de tarjeta y `POST /tickets/purchase`; una vista por estado de la reserva y por resultado del pago (`purchase-errors.ts`); "Cancel reservation" con confirmación                                                 |
+| Mis tickets (`features/tickets`)           | `/my-tickets?page=`        | `GET /tickets/me` paginado de a 12, con "Cancelled by organizer" para `CANCELLED_BY_EVENT`                                                                                                                                                             |
 
 Implementado en `web-admin` (solo ADMIN):
 
@@ -85,7 +85,7 @@ Decisión tomada el 2026-10-21 para cada hueco:
 
 - **Estados de la reserva:** `ACTIVE`, `EXPIRED`, `CONFIRMED`, `CANCELLED` (se canceló el evento) y `CANCELLED_BY_USER` (la canceló el dueño). El tipo de la UI debe aceptar los 5; solo `ACTIVE` permite pagar o cancelar.
 - **Estado efectivo:** `GET /reservations/:id` devuelve `EXPIRED` si la reserva venció aunque el job del backend no la haya liberado. La cuenta regresiva usa `expiresAt`, pero la fuente de verdad es la respuesta del backend.
-- **Respuesta de la cancelación:** `200` con el mismo cuerpo que `POST /reservations` y `status` `CANCELLED_BY_USER`. La UI limpia la reserva en curso (store con `persist`) e invalida la consulta de seats del evento, porque el seat ya está `AVAILABLE`.
+- **Respuesta de la cancelación:** `200` con el mismo cuerpo que `POST /reservations` y `status` `CANCELLED_BY_USER`. La UI quita solo esa reserva de las reservas en curso (store con `persist`) e invalida la consulta de seats del evento, porque el seat ya está `AVAILABLE`.
 - **Errores de la cancelación:** `409` con `RESERVATION_ALREADY_CANCELLED`, `RESERVATION_ALREADY_CONFIRMED`, `RESERVATION_EXPIRED` o `EVENT_CANCELLED`; `403` si la reserva no es del usuario.
 - **Cancelar durante el pago:** si el usuario cancela mientras la compra está en curso y la pasarela aprueba, se cobra, no se emite ticket, el pago queda `REFUND_PENDING` y la compra responde `409 RESERVATION_ALREADY_CANCELLED`. **La UI debe deshabilitar "Cancelar reserva" mientras haya un pago en curso** y pedir confirmación antes de cancelar.
 - **Compra de una reserva cancelada por el usuario:** responde `409 RESERVATION_ALREADY_CANCELLED` sin llamar a la pasarela.

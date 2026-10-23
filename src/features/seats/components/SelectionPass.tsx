@@ -2,24 +2,29 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import { formatMoney } from '@/shared/lib/format-money';
+import { joinLabels, totalPrice } from '../seat-allowance';
 import { useMediaQuery } from '@/shared/lib/use-media-query';
 import { cn } from '@/shared/lib/utils';
 import { Button } from '@/shared/ui/button';
 import { Laminate } from '@/shared/ui/laminate';
 
 interface SelectionPassProps {
-  selectedLabel: string | null;
-  lostSeatLabel: string | null;
+  selectedLabels: string[];
+  lostSeatLabels: string[];
+  // Cuántos seats puede elegir en total el usuario en este evento (límite menos lo que ya retiene)
+  allowance: number;
   price: number;
   eventLine: string;
   reserving: boolean;
   onReserve: () => void;
-  // Reserva en curso del usuario: mientras exista, no se puede reservar otro seat
-  hold: PassHold | null;
+  // Se pulsó un seat con el cupo lleno
+  fullNotice: boolean;
+  // Solo si el usuario ya retiene el máximo del evento: no se puede reservar más
+  held: PassHold | null;
 }
 
 export interface PassHold {
-  seatLabel: string;
+  count: number;
   checkoutPath: string;
 }
 
@@ -29,14 +34,20 @@ const HOLD_MINUTES = 10;
 // Desde este ancho el pase es una columna y muestra todo; por debajo va compacto
 export const WIDE_PASS_QUERY = '(min-width: 1024px)';
 
-function seatLostMessage(label: string): string {
-  return `${label} was just taken. Pick another seat`;
+// En móvil el pase cabe en una fila: se muestran estos códigos y el resto como "+N"
+const COMPACT_CODES = 3;
+
+function seatLostMessage(labels: string[]): string {
+  return labels.length === 1
+    ? `${labels[0]} was just taken. Pick another seat`
+    : `${joinLabels(labels)} were just taken. Pick other seats`;
 }
 
 function HoldingNotice({ hold }: { hold: PassHold }) {
   return (
     <p className="text-sm">
-      You are holding {hold.seatLabel}. Finish or cancel it to reserve another{' '}
+      You are holding {hold.count} {hold.count === 1 ? 'seat' : 'seats'}, the most for this event.
+      Finish or cancel {hold.count === 1 ? 'it' : 'them'} to reserve more{' '}
       <Link to={hold.checkoutPath} className="font-semibold underline underline-offset-4">
         Continue to checkout
       </Link>
@@ -44,8 +55,43 @@ function HoldingNotice({ hold }: { hold: PassHold }) {
   );
 }
 
-function reserveLabel(reserving: boolean): string {
-  return reserving ? 'Reserving...' : 'Reserve';
+function reserveLabel(reserving: boolean, count: number): string {
+  if (reserving) return 'Reserving...';
+  return count > 1 ? `Reserve ${count} seats` : 'Reserve';
+}
+
+/** Avisos bajo el pase: seats perdidos, cupo lleno y cuántos se eligieron. */
+function PassNotices({
+  lostSeatLabels,
+  fullNotice,
+  allowance,
+  count,
+}: Pick<SelectionPassProps, 'lostSeatLabels' | 'fullNotice' | 'allowance'> & { count: number }) {
+  return (
+    <>
+      {lostSeatLabels.length > 0 && (
+        <p role="alert" className="text-destructive text-sm font-semibold">
+          {seatLostMessage(lostSeatLabels)}
+        </p>
+      )}
+      {fullNotice && (
+        <p role="status" className="text-sm font-semibold">
+          You can select up to {allowance} seats
+        </p>
+      )}
+      {allowance > 1 && count > 0 && (
+        <p className="text-muted-foreground text-xs">
+          {count} of {allowance} seats selected
+        </p>
+      )}
+    </>
+  );
+}
+
+function selectedAnnouncement(labels: string[]): string {
+  return labels.length === 1
+    ? `Selected seat: ${labels[0]}`
+    : `Selected seats: ${labels.join(', ')}`;
 }
 
 function HoldRuler() {
@@ -82,10 +128,20 @@ export function SelectionPass(props: SelectionPassProps) {
   return wide ? <WidePass {...props} /> : <CompactPass {...props} />;
 }
 
-function EmptyPass({ lostSeatLabel }: Pick<SelectionPassProps, 'lostSeatLabel'>) {
-  return lostSeatLabel ? (
+function EmptyPass({ lostSeatLabels, held }: Pick<SelectionPassProps, 'lostSeatLabels' | 'held'>) {
+  if (held) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Button disabled className="w-full">
+          Reserve
+        </Button>
+        <HoldingNotice hold={held} />
+      </div>
+    );
+  }
+  return lostSeatLabels.length > 0 ? (
     <p role="alert" className="text-destructive text-sm font-semibold">
-      {seatLostMessage(lostSeatLabel)}
+      {seatLostMessage(lostSeatLabels)}
     </p>
   ) : (
     <p className="text-sm">
@@ -95,44 +151,39 @@ function EmptyPass({ lostSeatLabel }: Pick<SelectionPassProps, 'lostSeatLabel'>)
   );
 }
 
-function WidePass({
-  selectedLabel,
-  lostSeatLabel,
-  price,
-  eventLine,
-  reserving,
-  onReserve,
-  hold,
-}: SelectionPassProps) {
+function WidePass(props: SelectionPassProps) {
+  const { selectedLabels, price, eventLine, reserving, onReserve, held } = props;
   const noteId = useId();
+  const count = selectedLabels.length;
 
   return (
     <Laminate punched className="px-4 pt-8 pb-4">
-      {selectedLabel ? (
+      {count > 0 ? (
         <div className="grid grid-cols-[1fr_auto] items-end gap-x-4 gap-y-2">
           {/* Anuncia la selección a lectores de pantalla */}
           <p role="status" className="sr-only">
-            Selected seat: {selectedLabel}
+            {selectedAnnouncement(selectedLabels)}
           </p>
-          <div>
-            <span className="text-muted-foreground text-xs">Seat</span>
-            <SeatCode label={selectedLabel} className="text-code-lg block" />
+          <div className="min-w-0">
+            <span className="text-muted-foreground text-xs">{count === 1 ? 'Seat' : 'Seats'}</span>
+            <SeatCode
+              label={selectedLabels.join(', ')}
+              className={cn('block', count === 1 ? 'text-code-lg' : 'text-code-md break-words')}
+            />
           </div>
-          <span className="display text-code-md">{formatMoney(price)}</span>
+          <span className="display text-code-md">{formatMoney(totalPrice(price, count))}</span>
           <p className="text-muted-foreground col-span-2 truncate text-xs">{eventLine}</p>
           <Button
             className="col-span-2 w-full"
-            disabled={reserving || !!hold}
+            disabled={reserving || !!held}
             onClick={onReserve}
             aria-describedby={noteId}
           >
-            {reserveLabel(reserving)}
+            {reserveLabel(reserving, count)}
           </Button>
-          {hold && (
-            <div className="col-span-2">
-              <HoldingNotice hold={hold} />
-            </div>
-          )}
+          <div className="col-span-2 flex flex-col gap-1">
+            <PassNotices {...props} count={count} />
+          </div>
           <div className="text-muted-foreground col-span-2 flex flex-col gap-1.5 text-xs">
             <HoldRuler />
             <span id={noteId}>{HOLD_NOTE}</span>
@@ -140,46 +191,44 @@ function WidePass({
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          <EmptyPass lostSeatLabel={lostSeatLabel} />
+          <EmptyPass lostSeatLabels={props.lostSeatLabels} held={held} />
+          {props.fullNotice && <PassNotices {...props} count={0} lostSeatLabels={[]} />}
         </div>
       )}
     </Laminate>
   );
 }
 
-function CompactPass({
-  selectedLabel,
-  lostSeatLabel,
-  price,
-  eventLine,
-  reserving,
-  onReserve,
-  hold,
-}: SelectionPassProps) {
+function CompactPass(props: SelectionPassProps) {
+  const { selectedLabels, price, eventLine, reserving, onReserve, held } = props;
   const noteId = useId();
   const detailsId = useId();
   const [open, setOpen] = useState(false);
+  const count = selectedLabels.length;
+  const shown = selectedLabels.slice(0, COMPACT_CODES).join(', ');
+  const hidden = count - COMPACT_CODES;
 
   return (
     <Laminate className="px-3 py-3">
-      {selectedLabel ? (
+      {count > 0 ? (
         <div className="flex flex-col gap-2">
           <p role="status" className="sr-only">
-            Selected seat: {selectedLabel}
+            {selectedAnnouncement(selectedLabels)}
           </p>
           <div className="flex items-center gap-3">
-            <SeatCode label={selectedLabel} className="text-code-md min-w-12" />
-            <span className="display text-code-md">{formatMoney(price)}</span>
+            <SeatCode label={shown} className="text-code-md min-w-12" />
+            {hidden > 0 && <span className="text-muted-foreground text-sm">+{hidden}</span>}
+            <span className="display text-code-md">{formatMoney(totalPrice(price, count))}</span>
             <Button
               className="ml-auto"
-              disabled={reserving || !!hold}
+              disabled={reserving || !!held}
               onClick={onReserve}
               aria-describedby={noteId}
             >
-              {reserveLabel(reserving)}
+              {reserveLabel(reserving, count)}
             </Button>
           </div>
-          {hold && <HoldingNotice hold={hold} />}
+          <PassNotices {...props} count={count} />
           <div className="text-muted-foreground flex items-center justify-between gap-2 text-xs">
             <span id={noteId}>{HOLD_NOTE}</span>
             <Button
@@ -203,12 +252,18 @@ function CompactPass({
               className="flex flex-col gap-1.5 border-t border-dashed pt-2 text-xs"
             >
               <p className="text-muted-foreground">{eventLine}</p>
+              {count > 1 && (
+                <p className="text-muted-foreground">Seats: {selectedLabels.join(', ')}</p>
+              )}
               <HoldRuler />
             </div>
           )}
         </div>
       ) : (
-        <EmptyPass lostSeatLabel={lostSeatLabel} />
+        <div className="flex flex-col gap-1">
+          <EmptyPass lostSeatLabels={props.lostSeatLabels} held={held} />
+          {props.fullNotice && <PassNotices {...props} count={0} lostSeatLabels={[]} />}
+        </div>
       )}
     </Laminate>
   );

@@ -19,4 +19,4 @@
 ## 5. Documentación y cierre
 
 - [x] 5.1 Actualizar `DESIGN.md` y `.impeccable/design.json` (campo del formulario, fila del panel y dato del encabezado) y `docs/api-integration.md` (pantallas de admin y validaciones). Verificar leyendo los archivos
-- [ ] 5.2 Verificación contra `ticket-api` real: crear un evento con límite 1, 8, sin el campo y con 9 desde la UI y ver el límite en el panel y el detalle. Verificar con las respuestas esperadas y `pnpm check`
+- [x] 5.2 Verificación contra `ticket-api` real: crear un evento con límite 1, 8, sin el campo y con 9 desde la UI y ver el límite en el panel y el detalle. Verificar con las respuestas esperadas y `pnpm check`

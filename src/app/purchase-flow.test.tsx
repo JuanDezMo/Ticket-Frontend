@@ -55,7 +55,7 @@ describe('purchase flow', () => {
       `/events/${event.id}`,
     );
     expect(screen.getByText('C7')).toBeInTheDocument();
-    expect(useHoldStore.getState().hold).toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
     // Flujo largo: margen para cuando corre con toda la suite
   }, 20_000);
 

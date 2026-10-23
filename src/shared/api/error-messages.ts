@@ -16,6 +16,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   SEAT_NOT_FOUND: 'Seat not found',
   SEAT_NOT_AVAILABLE: 'This seat is no longer available. Please choose another one',
   SEAT_LIMIT_REACHED: 'You have reached the seat limit for this event',
+  HOLD_LIMIT_REACHED: 'You have too many seats on hold. Pay or cancel some to reserve more',
   EVENT_ALREADY_CANCELLED: 'This event is already cancelled',
   EVENT_ALREADY_ENDED: 'This event has already ended',
   EVENT_NOT_ACTIVE: 'This event is no longer available for booking',

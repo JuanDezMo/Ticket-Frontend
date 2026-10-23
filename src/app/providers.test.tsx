@@ -8,11 +8,11 @@ describe('Providers', () => {
   it('clears the reservation in progress when the session ends', async () => {
     signInAs('USER');
     renderRoute('/');
-    useHoldStore.getState().start(makeReservation());
-    expect(useHoldStore.getState().hold).not.toBeNull();
+    useHoldStore.getState().add([makeReservation()]);
+    expect(useHoldStore.getState().holds).toHaveLength(1);
 
     useSessionStore.getState().signOut();
 
-    await waitFor(() => expect(useHoldStore.getState().hold).toBeNull());
+    await waitFor(() => expect(useHoldStore.getState().holds).toHaveLength(0));
   });
 });

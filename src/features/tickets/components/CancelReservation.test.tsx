@@ -16,7 +16,7 @@ function seed() {
   setSeats(event.id, makeSeats(30, { C7: 'RESERVED' }));
   const reservation = makeReservation({ eventId: event.id });
   setReservations([reservation]);
-  useHoldStore.getState().start(reservation);
+  useHoldStore.getState().add([reservation]);
   return { event, reservation };
 }
 
@@ -37,8 +37,25 @@ describe('CancelReservation', () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe(ROUTES.eventDetail(event.id)));
     expect(await screen.findByText('Reservation cancelled')).toBeInTheDocument();
-    expect(useHoldStore.getState().hold).toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
     expect(getReservation(reservation.id)?.status).toBe('CANCELLED_BY_USER');
+  });
+
+  it('drops only the cancelled reservation and keeps the others in progress', async () => {
+    const { event, reservation } = seed();
+    const other = makeReservation({ eventId: event.id, seat: 'C8' });
+    setReservations([reservation, other]);
+    useHoldStore.getState().add([other]);
+    const { user, router } = renderRoute(ROUTES.checkout(reservation.id));
+
+    const dialog = await openDialog(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Yes, cancel it' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(ROUTES.eventDetail(event.id)));
+    expect(useHoldStore.getState().holds.map((hold) => hold.reservationId)).toEqual([other.id]);
+    expect(
+      await screen.findByRole('region', { name: 'Reservation in progress' }),
+    ).toHaveTextContent('Seat C8 is held');
   });
 
   it('sends nothing when the user closes the dialog', async () => {
@@ -51,7 +68,7 @@ describe('CancelReservation', () => {
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
     expect(getReservation(reservation.id)?.status).toBe('ACTIVE');
     expect(router.state.location.pathname).toBe(ROUTES.checkout(reservation.id));
-    expect(useHoldStore.getState().hold).not.toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(1);
   });
 
   it('is disabled while a payment is in progress', async () => {
@@ -88,7 +105,7 @@ describe('CancelReservation', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Yes, cancel it' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe(ROUTES.myTickets));
-    expect(useHoldStore.getState().hold).toBeNull();
+    expect(useHoldStore.getState().holds).toHaveLength(0);
   });
 
   it('shows the cancelled state when it was already cancelled elsewhere (409)', async () => {

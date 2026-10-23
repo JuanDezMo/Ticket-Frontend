@@ -4,13 +4,15 @@ import { ROLES } from '@/shared/session/roles';
 import { useSessionStore } from '@/shared/session/session.store';
 import { Button } from '@/shared/ui/button';
 import { Laminate } from '@/shared/ui/laminate';
-import { useHold, useReservation } from '../hooks';
+import { useHolds, useReservation } from '../hooks';
 import { Countdown } from './Countdown';
 
 /** Aviso de la reserva en curso; el checkout de esa reserva ya muestra su cuenta regresiva. */
 export function HoldBanner() {
   const role = useSessionStore((state) => state.role);
-  const hold = useHold();
+  const holds = useHolds();
+  // La que vence primero: su cuenta regresiva y su checkout son los del aviso
+  const hold = holds[0];
   const checkout = useMatch(ROUTES.checkoutPattern);
   const reservation = useReservation(hold?.reservationId);
 
@@ -24,7 +26,9 @@ export function HoldBanner() {
         aria-label="Reservation in progress"
         className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3"
       >
-        <p className="text-sm font-semibold">Seat {hold.seatLabel} is held</p>
+        <p className="text-sm font-semibold">
+          {holds.length === 1 ? `Seat ${hold.seatLabel} is held` : `${holds.length} seats held`}
+        </p>
         <div className="flex items-center gap-2 text-sm">
           <div className="w-24">
             <Countdown
