@@ -6,7 +6,7 @@ Permite a un comprador retener un seat durante un tiempo limitado, ver cuánto l
 ## Requirements
 
 ### Requirement: Reservar los seats seleccionados
-Un USER con uno o más seats seleccionados en un evento reservable SHALL poder pulsar "Reserve", que envía una sola solicitud de reserva con el evento y la lista de seats. La reserva es todo o nada: o se reservan todos o ninguno. Mientras responde, el botón SHALL mostrar "Reserving..." y quedar deshabilitado. Con una respuesta exitosa, la UI SHALL guardar las reservas en curso, limpiar la selección, actualizar el mapa de seats y llevar al checkout de la primera reserva. La UI MUST NOT reintentar la solicitud automáticamente ni dar por reservado ningún seat tras un error.
+Un USER con uno o más seats seleccionados en un evento reservable SHALL poder pulsar "Reserve", que envía una sola solicitud de reserva con el evento y la lista de seats. La reserva es todo o nada: o se reservan todos o ninguno. Mientras responde, el botón SHALL mostrar "Reserving..." y quedar deshabilitado. Con una respuesta exitosa, la UI SHALL guardar las reservas en curso, limpiar la selección, actualizar el mapa de seats y llevar al checkout de las reservas creadas: "/checkout/<id>" con una y "/checkout?ids=<ids>" con varias. La UI MUST NOT reintentar la solicitud automáticamente ni dar por reservado ningún seat tras un error.
 
 #### Scenario: Reserva exitosa
 - **WHEN** el USER pulsa "Reserve" con `C7` seleccionado y la API responde `201`
@@ -14,7 +14,7 @@ Un USER con uno o más seats seleccionados en un evento reservable SHALL poder p
 
 #### Scenario: Reserva de varios seats
 - **WHEN** el USER pulsa "Reserve" con `C7` y `C8` seleccionados y la API responde `201` con dos reservas
-- **THEN** se envió una sola solicitud con los dos seats, las dos reservas quedan en curso, la selección queda vacía y la UI abre el checkout de la primera
+- **THEN** se envió una sola solicitud con los dos seats, las dos reservas quedan en curso, la selección queda vacía y la UI abre el checkout de las dos reservas
 
 #### Scenario: Doble pulsación
 - **WHEN** el USER pulsa "Reserve" dos veces seguidas
@@ -79,18 +79,22 @@ La UI SHALL guardar en el navegador, mientras dure la pestaña, solo una lista c
 - **THEN** la reserva pasa a una lista de una y el aviso se muestra sin errores
 
 ### Requirement: Aviso de reserva en curso
-Mientras haya reservas `ACTIVE` en curso, la UI SHALL mostrar debajo del encabezado, en todas las páginas excepto el checkout de la reserva a la que enlaza, un aviso con los seats retenidos ("Seat C7 is held" con una; "3 seats held" con varias), el tiempo hasta el vencimiento más próximo y un enlace "Continue to checkout" a la reserva que vence primero.
+Mientras haya reservas `ACTIVE` en curso, la UI SHALL mostrar debajo del encabezado, en todas las páginas excepto el checkout que ya incluye la reserva a la que enlaza, un aviso con los seats retenidos ("Seat C7 is held" con una; "3 seats held" con varias), el tiempo hasta el vencimiento más próximo y un enlace "Continue to checkout" al checkout de las reservas en curso del mismo evento que la que vence primero.
 
 #### Scenario: Navegar con una reserva activa
 - **WHEN** el USER con la reserva `C7` activa abre el listado de eventos
 - **THEN** ve "Seat C7 is held" con el tiempo restante y "Continue to checkout"
 
 #### Scenario: Varias reservas
-- **WHEN** el USER retiene `C7`, `C8` y `C9` y abre el listado de eventos
-- **THEN** ve "3 seats held" con el tiempo hasta el primer vencimiento y "Continue to checkout"
+- **WHEN** el USER retiene `C7`, `C8` y `C9` del mismo evento y abre el listado de eventos
+- **THEN** ve "3 seats held" con el tiempo hasta el primer vencimiento y "Continue to checkout" hacia el checkout de las tres
+
+#### Scenario: Reservas de dos eventos
+- **WHEN** el USER retiene `C7` de un evento y `A1` y `A2` de otro, y `C7` vence primero
+- **THEN** "Continue to checkout" lleva al checkout de `C7` solamente, porque una compra es de un solo evento
 
 #### Scenario: En el checkout
-- **WHEN** el USER está en el checkout de la reserva a la que enlazaría el aviso
+- **WHEN** el USER está en el checkout que incluye la reserva a la que enlazaría el aviso
 - **THEN** el aviso no aparece, porque la cuenta regresiva ya está en la página
 
 #### Scenario: La reserva termina
@@ -113,11 +117,15 @@ La cuenta regresiva SHALL mostrar minutos y segundos hasta `expiresAt` y una reg
 - **THEN** un aviso para lectores de pantalla dice "One minute left to pay"
 
 ### Requirement: Cancelar la reserva
-El checkout SHALL ofrecer "Cancel reservation", que pide confirmación antes de enviar la cancelación. Mientras haya un pago en curso, el botón SHALL estar deshabilitado. Con una cancelación exitosa, la UI SHALL descartar solo esa reserva de las reservas en curso (las demás siguen), actualizar el mapa de seats del evento, mostrar "Reservation cancelled" y volver al detalle del evento.
+El checkout SHALL ofrecer "Cancel reservation", que pide confirmación antes de enviar la cancelación; con varias reservas vigentes cancela todas las del grupo ("Cancel all") y cada seat ofrece además "Remove <label>" para cancelar solo esa. Mientras haya un pago en curso, estos botones SHALL estar deshabilitados. Con una cancelación exitosa, la UI SHALL descartar esas reservas de las reservas en curso (las demás siguen), actualizar el mapa de seats del evento y, si cancelaron todas, mostrar "Reservation cancelled" ("Reservations cancelled" con varias) y volver al detalle del evento.
 
 #### Scenario: Cancelación confirmada
 - **WHEN** el USER pulsa "Cancel reservation" y confirma
 - **THEN** la reserva se cancela, vuelve al evento y el seat figura como disponible
+
+#### Scenario: Cancelar todo el grupo
+- **WHEN** el USER con `C7` y `C8` en el checkout pulsa "Cancel all" y confirma
+- **THEN** las dos reservas se cancelan, la UI muestra "Reservations cancelled", vuelve al evento y los dos seats figuran como disponibles
 
 #### Scenario: No confirma
 - **WHEN** el USER pulsa "Cancel reservation" y cierra el diálogo
